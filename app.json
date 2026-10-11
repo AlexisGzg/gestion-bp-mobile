@@ -2,6 +2,7 @@
   "expo": {
     "name": "gestion-bp-mobile",
     "slug": "gestion-bp-mobile",
+    "scheme": "gestion-bp-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,6 +11,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.gestionbp.mobile",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -20,6 +22,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-router"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ba8eb158-9f0f-48e0-be62-10cc7f0159b8"
+      }
     }
   }
 }
