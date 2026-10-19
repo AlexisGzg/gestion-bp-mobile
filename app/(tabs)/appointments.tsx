@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, SectionList, TouchableOpacity, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
 import { AppointmentCard } from '../../src/components/molecules/AppointmentCard';
 import { QRModal } from '../../src/components/organisms/QRModal';
 import { AppointmentsService } from '../../src/services/appointments.service';
@@ -114,6 +114,17 @@ export default function AppointmentsScreen() {
     ]);
   };
 
+  const upcoming = appointments.filter((a) =>
+    ['pending', 'confirmed', 'in_progress'].includes(a.status)
+  );
+  const past = appointments.filter(
+    (a) => !['pending', 'confirmed', 'in_progress'].includes(a.status)
+  );
+  const sections = [
+    { title: 'Próximas', data: upcoming },
+    { title: 'Historial', data: past },
+  ].filter((s) => s.data.length > 0);
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Cabecera con Saludo y Salir */}
@@ -139,10 +150,14 @@ export default function AppointmentsScreen() {
           <Text style={styles.emptySubtitle}>Presiona el botón {'"'}+{'"'} para agendar tu primera cita.</Text>
         </View>
       ) : (
-        <FlatList
-          data={appointments}
+        <SectionList
+          sections={sections}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
+          stickySectionHeadersEnabled={false}
+          renderSectionHeader={({ section }) => (
+            <Text style={styles.sectionHeader}>{section.title}</Text>
+          )}
           renderItem={({ item }) => (
             <AppointmentCard
               appointment={item}
@@ -197,6 +212,12 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: 20,
     paddingBottom: 24,
+  },
+  sectionHeader: {
+    ...typography.h3,
+    color: colors.text.heading,
+    marginTop: 8,
+    marginBottom: 10,
   },
   center: {
     flex: 1,

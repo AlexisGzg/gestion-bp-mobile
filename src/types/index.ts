@@ -7,6 +7,7 @@ export interface UserProfile {
   email: string;
   first_name?: string | null;
   last_name?: string | null;
+  alias?: string | null;
   full_name: string | null;
   phone?: string | null;
   avatar_url?: string | null;
@@ -67,6 +68,50 @@ export interface AppointmentItem {
   qr_code?: string | null;
   notes?: string | null;
   created_at: string;
+}
+
+// Sistema de Fidelización (Recompensas)
+export type RewardType = 'free_service' | 'discount_percent' | 'discount_fixed' | 'free_product' | 'custom';
+export type RewardStatus = 'pending' | 'claimed' | 'expired';
+
+// Configuración del programa de lealtad (fila cruda de `loyalty_config`)
+export interface LoyaltyConfig {
+  id: string;
+  is_active: boolean;
+  visits_required: number;
+  reward_type: RewardType;
+  reward_value: number;
+  reward_description: string;
+  expiration_days?: number | null;
+  max_rewards_per_client?: number | null;
+}
+
+// Recompensa ganada por el cliente (fila cruda de `client_rewards`)
+export interface ClientReward {
+  id: string;
+  client_id: string;
+  client_name: string;
+  reward_type: RewardType;
+  reward_value: number;
+  reward_description: string;
+  status: RewardStatus;
+  earned_at: string;
+  expires_at?: string | null;
+  claimed_at?: string | null;
+}
+
+// Resumen de fidelidad del cliente (equivalente al de la web)
+export interface ClientLoyaltySummary {
+  clientId: string;
+  clientName: string;
+  currentVisits: number;
+  visitsRequired: number;
+  visitProgress: number; // Porcentaje (0-100)
+  totalVisits: number;
+  points: number;
+  pendingRewards: ClientReward[];
+  claimedRewards: number;
+  nextRewardDescription?: string | null;
 }
 
 // Catálogo de Productos (Tienda)

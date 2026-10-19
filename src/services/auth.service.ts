@@ -131,7 +131,14 @@ export const AuthService = {
   },
 
   // Actualizar datos del perfil
-  async updateProfile(updates: { full_name?: string; phone?: string; avatar_url?: string }) {
+  async updateProfile(updates: {
+    first_name?: string;
+    last_name?: string;
+    full_name?: string;
+    alias?: string;
+    phone?: string;
+    avatar_url?: string;
+  }) {
     const user = await this.getCurrentUser();
     if (!user) throw new Error('Usuario no autenticado');
 
@@ -147,5 +154,20 @@ export const AuthService = {
 
     if (error) throw error;
     return data;
+  },
+
+  // Enviar correo para restablecer la contraseña
+  async resetPassword(email: string) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+    if (error) throw error;
+  },
+
+  // Cambiar la contraseña del usuario autenticado
+  async changePassword(password: string) {
+    const user = await this.getCurrentUser();
+    if (!user) throw new Error('Usuario no autenticado');
+
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
   },
 };

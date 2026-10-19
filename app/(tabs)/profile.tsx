@@ -12,11 +12,14 @@ import {
 import { useFocusEffect } from 'expo-router';
 import { Input } from '../../src/components/atoms/Input';
 import { Button } from '../../src/components/atoms/Button';
+import { LoyaltyProgress } from '../../src/components/molecules/LoyaltyProgress';
 import { AuthService } from '../../src/services/auth.service';
+import { LoyaltyService } from '../../src/services/loyalty.service';
 import { supabase } from '../../src/lib/supabase';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
-import { Gift, RefreshCw, LogOut } from 'lucide-react-native';
+import { ClientLoyaltySummary } from '../../src/types';
+import { LogOut } from 'lucide-react-native';
 
 export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
@@ -24,9 +27,15 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [client, setClient] = useState<any>(null);
+  const [summary, setSummary] = useState<ClientLoyaltySummary | null>(null);
 
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [alias, setAlias] = useState('');
   const [phone, setPhone] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPass, setChangingPass] = useState(false);
 
   const load = async () => {
     try {
@@ -35,7 +44,9 @@ export default function ProfileScreen() {
       const p = await AuthService.getCurrentUserProfile();
       setUser(u);
       setProfile(p);
-      setFullName(p?.full_name || u?.user_metadata?.full_name || '');
+      setFirstName(p?.first_name || u?.user_metadata?.first_name || '');
+      setLastName(p?.last_name || u?.user_metadata?.last_name || '');
+      setAlias(p?.alias || '');
       setPhone(p?.phone || u?.user_metadata?.phone || '');
 
       // Buscar cliente relacionado (si existe)
@@ -45,6 +56,19 @@ export default function ProfileScreen() {
         .or(`profile_id.eq.${u?.id}`)
         .maybeSingle();
       setClient(c);
+
+      if (c) {
+        const s = await LoyaltyService.getClientLoyaltySummary({
+          clientId: c.id,
+          clientName: c.name || p?.full_name || u?.user_metadata?.full_name || 'Cliente',
+          currentVisits: c.current_visits ?? 0,
+          totalVisits: c.total_visits ?? 0,
+          points: c.loyalty_points ?? 0,
+        });
+        setSummary(s);
+      } else {
+        setSummary(null);
+      }
     } catch {
       Alert.alert('Error', 'No se pudo cargar el perfil');
     } finally {
@@ -60,15 +84,47 @@ export default function ProfileScreen() {
   );
 
   const handleUpdate = async () => {
+    if (!firstName.trim()) {
+      Alert.alert('Campo requerido', 'El nombre no puede estar vacío');
+      return;
+    }
     try {
       setUpdating(true);
-      await AuthService.updateProfile({ full_name: fullName, phone });
+      await AuthService.updateProfile({
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        alias: alias.trim(),
+        full_name: `${firstName.trim()} ${lastName.trim()}`.trim(),
+        phone,
+      });
       Alert.alert('Listo', 'Datos actualizados');
       await load();
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) {
+      Alert.alert('Contraseña corta', 'Debe tener al menos 6 caracteres');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('No coinciden', 'Las contraseñas no coinciden');
+      return;
+    }
+    try {
+      setChangingPass(true);
+      await AuthService.changePassword(newPassword);
+      setNewPassword('');
+      setConfirmPassword('');
+      Alert.alert('Listo', 'Contraseña actualizada correctamente');
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setChangingPass(false);
     }
   };
 
@@ -108,13 +164,25 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.card}>
+        <View style={[styles.card, styles.section]}>
           <Text style={styles.cardTitle}>Datos personales</Text>
           <Input
-            label="Nombre completo"
+            label="Nombre *"
             placeholder="Tu nombre"
-            value={fullName}
-            onChangeText={setFullName}
+            value={firstName}
+            onChangeText={setFirstName}
+          />
+          <Input
+            label="Apellido"
+            placeholder="Tu apellido"
+            value={lastName}
+            onChangeText={setLastName}
+          />
+          <Input
+            label="Alias (opcional)"
+            placeholder="Ej. Goku, BarberKing"
+            value={alias}
+            onChangeText={setAlias}
           />
           <Input
             label="Teléfono / WhatsApp"
@@ -137,31 +205,60 @@ export default function ProfileScreen() {
           />
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.cardTitle}>Fidelización</Text>
-            <RefreshCw size={16} color={colors.primary[400]} />
+        <View style={[styles.card, styles.section]}>
+          <Text style={styles.cardTitle}>Cambiar contraseña</Text>
+          <Input
+            label="Nueva contraseña"
+            placeholder="Mínimo 6 caracteres"
+            secureTextEntry
+            value={newPassword}
+            onChangeText={setNewPassword}
+          />
+          <Input
+            label="Confirmar contraseña"
+            placeholder="Repite la contraseña"
+            secureTextEntry
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
+          <Button
+            title="Actualizar contraseña"
+            onPress={handleChangePassword}
+            loading={changingPass}
+            variant="outline"
+            style={{ marginTop: 8 }}
+          />
+        </View>
+
+        <View style={styles.section}>
+          {summary ? (
+            <LoyaltyProgress summary={summary} />
+          ) : (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Fidelización</Text>
+              <Text style={styles.loyalSub}>Aún no hay datos de fidelización</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={[styles.card, styles.section]}>
+          <Text style={styles.cardTitle}>Resumen</Text>
+          <View style={styles.loyalMetaRow}>
+            <Text style={styles.loyalMetaLabel}>Puntos</Text>
+            <Text style={styles.loyalMetaValue}>
+              {client?.loyalty_points ?? profile?.loyalty_points ?? 0}
+            </Text>
           </View>
-          <View style={styles.loyalRow}>
-            <View style={styles.loyalItem}>
-              <Gift size={20} color={colors.primary[500]} />
-              <Text style={styles.loyalValue}>{client?.loyalty_points ?? profile?.loyalty_points ?? 0}</Text>
-              <Text style={styles.loyalLabel}>Puntos</Text>
-            </View>
-            <View style={styles.loyalItem}>
-              <Text style={styles.loyalValue}>{client?.current_visits ?? 0}</Text>
-              <Text style={styles.loyalLabel}>Visitas actuales</Text>
-            </View>
-            <View style={styles.loyalItem}>
-              <Text style={styles.loyalValue}>{client?.total_visits ?? 0}</Text>
-              <Text style={styles.loyalLabel}>Visitas totales</Text>
-            </View>
+          <View style={styles.loyalMetaRow}>
+            <Text style={styles.loyalMetaLabel}>Visitas totales</Text>
+            <Text style={styles.loyalMetaValue}>{client?.total_visits ?? 0}</Text>
           </View>
-          <Text style={styles.loyalSub}>
-            {client?.last_visit_at
-              ? `Última visita: ${client.last_visit_at.slice(0, 10)}`
-              : 'Sin visitas registradas aún'}
-          </Text>
+          <View style={[styles.loyalMetaRow, styles.loyalMetaRowLast]}>
+            <Text style={styles.loyalMetaLabel}>Última visita</Text>
+            <Text style={styles.loyalMetaValue}>
+              {client?.last_visit_at ? client.last_visit_at.slice(0, 10) : '—'}
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -206,10 +303,17 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   cardTitle: { ...typography.h3, color: colors.text.heading, marginBottom: 12 },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  loyalRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-  loyalItem: { flex: 1, alignItems: 'center', backgroundColor: colors.primary[50], padding: 12, borderRadius: 12 },
-  loyalValue: { ...typography.h2, color: colors.primary[500], marginTop: 6 },
-  loyalLabel: { ...typography.caption, color: colors.text.secondary, marginTop: 2 },
-  loyalSub: { ...typography.caption, color: colors.text.muted, marginTop: 10, textAlign: 'center' },
+  section: { marginBottom: 16 },
+  loyalMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  loyalMetaRowLast: { borderBottomWidth: 0 },
+  loyalMetaLabel: { ...typography.bodySmall, color: colors.text.secondary },
+  loyalMetaValue: { ...typography.bodySmall, fontWeight: '600', color: colors.text.heading },
+  loyalSub: { ...typography.caption, color: colors.text.muted, marginTop: 4 },
 });
