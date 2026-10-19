@@ -158,7 +158,14 @@ export const AuthService = {
 
   // Enviar correo para restablecer la contraseña
   async resetPassword(email: string) {
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+    const redirectUrl = makeRedirectUri({
+      scheme: 'gestion-bp-mobile',
+      path: 'reset-password',
+    });
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: redirectUrl,
+    });
     if (error) throw error;
   },
 

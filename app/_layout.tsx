@@ -42,11 +42,13 @@ export default function RootLayout() {
   useEffect(() => {
     if (!authChecked || !fontsLoaded) return;
 
-    const inAuthGroup = segments[0] === '(auth)';
+    const segs = segments as string[];
+    const inAuthGroup = segs[0] === '(auth)';
+    const isResetPassword = inAuthGroup && segs[1] === 'reset-password';
 
     if (!session && !inAuthGroup) {
       router.replace('/(auth)/login');
-    } else if (session && inAuthGroup) {
+    } else if (session && inAuthGroup && !isResetPassword) {
       router.replace('/(tabs)');
     }
   }, [session, authChecked, fontsLoaded, segments]);
