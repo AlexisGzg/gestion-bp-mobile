@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { AppointmentItem } from '../../types';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
-import { X, Calendar, Clock, User } from 'lucide-react-native';
+import { X, Calendar, Clock, User, RefreshCw } from 'lucide-react-native';
+import { generateDynamicToken, getSlotCountdown, QR_SLOT_DURATION } from '../../lib/qr-crypto';
 
 interface QRModalProps {
   visible: boolean;
@@ -13,10 +14,31 @@ interface QRModalProps {
 }
 
 export const QRModal: React.FC<QRModalProps> = ({ visible, appointment, onClose }) => {
+  const [dynamicToken, setDynamicToken] = useState('');
+  const [countdown, setCountdown] = useState(QR_SLOT_DURATION);
+
+  // Token dinámico que rota cada 30s (mismo formato que valida el escáner web)
+  useEffect(() => {
+    if (!visible || !appointment) return;
+
+    const qrSeed = appointment.qr_code || appointment.id;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDynamicToken(generateDynamicToken(appointment.id, qrSeed));
+    setCountdown(getSlotCountdown());
+
+    const interval = setInterval(() => {
+      setDynamicToken(generateDynamicToken(appointment.id, qrSeed));
+      setCountdown(getSlotCountdown());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [visible, appointment]);
+
   if (!appointment) return null;
 
-  // Valor a codificar en el QR (el código BP-XXXXXXXX-XXXX que valida la web)
-  const qrValue = appointment.qr_code || appointment.id;
+  const qrSeed = appointment.qr_code || appointment.id;
+  const qrValue = dynamicToken || qrSeed;
+  const manualCode = appointment.qr_code || appointment.id;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -38,7 +60,24 @@ export const QRModal: React.FC<QRModalProps> = ({ visible, appointment, onClose 
             />
           </View>
 
-          <Text style={styles.codeText}>{qrValue}</Text>
+          {/* Countdown del slot de 30s */}
+          <View style={styles.countdownRow}>
+            <RefreshCw size={12} color={colors.text.muted} />
+            <Text style={styles.countdownText}>
+              Se renueva en {countdown}s
+            </Text>
+          </View>
+          <View style={styles.countdownBarTrack}>
+            <View
+              style={[
+                styles.countdownBarFill,
+                { width: `${((QR_SLOT_DURATION - countdown) / QR_SLOT_DURATION) * 100}%` },
+              ]}
+            />
+          </View>
+
+          {/* Código estático para ingreso manual */}
+          <Text style={styles.codeText}>{manualCode}</Text>
 
           <View style={styles.ticketDetails}>
             <Text style={styles.serviceName}>{appointment.service_name}</Text>
@@ -111,6 +150,29 @@ const styles = StyleSheet.create({
     color: colors.primary[500],
     letterSpacing: 2,
     marginTop: 12,
+  },
+  countdownRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 10,
+  },
+  countdownText: {
+    ...typography.caption,
+    color: colors.text.muted,
+  },
+  countdownBarTrack: {
+    width: '100%',
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.cardAlt,
+    marginTop: 6,
+    overflow: 'hidden',
+  },
+  countdownBarFill: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: colors.primary[500],
   },
   ticketDetails: {
     width: '100%',

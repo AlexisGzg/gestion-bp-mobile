@@ -46,8 +46,8 @@ export interface BarberItem {
   status: 'active' | 'inactive';
 }
 
-// Estados oficiales de las Citas
-export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+// Estados oficiales de las Citas (in_progress = validado por escáner QR)
+export type AppointmentStatus = 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
 
 // Cita de cliente
 export interface AppointmentItem {

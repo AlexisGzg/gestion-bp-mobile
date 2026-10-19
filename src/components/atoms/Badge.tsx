@@ -12,15 +12,18 @@ export const Badge: React.FC<BadgeProps> = ({ status }) => {
   const getBadgeConfig = () => {
     switch (status) {
       case 'confirmed':
-        return { label: 'Confirmada', bg: '#E8F5E9', text: colors.status.confirmed };
+        return { label: 'Confirmada', bg: colors.statusBg.confirmed, text: colors.status.confirmed };
+      case 'in_progress':
+        return { label: 'En proceso', bg: colors.statusBg.in_progress, text: colors.status.in_progress };
       case 'completed':
-        return { label: 'Completada', bg: '#E3F2FD', text: colors.status.completed };
+        return { label: 'Completada', bg: colors.statusBg.completed, text: colors.status.completed };
       case 'cancelled':
+        return { label: 'Cancelada', bg: colors.statusBg.cancelled, text: colors.status.cancelled };
       case 'no_show':
-        return { label: 'Cancelada', bg: '#FFEBEE', text: colors.status.cancelled };
+        return { label: 'No asistió', bg: colors.statusBg.no_show, text: colors.status.no_show };
       case 'pending':
       default:
-        return { label: 'Pendiente', bg: '#FFF8E1', text: colors.status.pending };
+        return { label: 'Pendiente', bg: colors.statusBg.pending, text: colors.status.pending };
     }
   };
 

@@ -31,6 +31,57 @@ export const AppointmentsService = {
     return (data || []) as AppointmentItem[];
   },
 
+  // Verificar si el cliente ya tiene una cita activa (pending/confirmed/in_progress)
+  async hasActiveAppointment(clientId: string): Promise<AppointmentItem | null> {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('client_id', clientId)
+      .in('status', ['pending', 'confirmed', 'in_progress'])
+      .gte('date', today)
+      .limit(1);
+
+    if (error) throw error;
+    return (data && data.length > 0 ? data[0] : null) as AppointmentItem | null;
+  },
+
+  // Citas existentes de un barbero en una fecha (para validar solape)
+  async getBarberAppointmentsForDate(barberId: string, date: string): Promise<AppointmentItem[]> {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('barber_id', barberId)
+      .eq('date', date)
+      .in('status', ['pending', 'confirmed', 'in_progress']);
+
+    if (error) throw error;
+    return (data || []) as AppointmentItem[];
+  },
+
+  // Convertir 'HH:mm' a minutos desde medianoche
+  timeToMinutes(time: string): number {
+    const [h, m] = time.split(':').map(Number);
+    return h * 60 + m;
+  },
+
+  // ¿El rango [startMin, endMin) choca con alguna cita existente?
+  hasTimeConflict(
+    newStart: string,
+    newEnd: string,
+    existing: AppointmentItem[]
+  ): AppointmentItem | null {
+    const start = this.timeToMinutes(newStart);
+    const end = this.timeToMinutes(newEnd);
+    for (const apt of existing) {
+      const aptStart = this.timeToMinutes(apt.start_time);
+      const aptEnd = this.timeToMinutes(apt.end_time);
+      if (start < aptEnd && end > aptStart) return apt;
+    }
+    return null;
+  },
+
   // Crear una nueva cita y generar su código QR compatible con el escáner web
   async createAppointment(params: CreateAppointmentParams): Promise<AppointmentItem> {
     // Calcular hora de fin sumando la duración en minutos

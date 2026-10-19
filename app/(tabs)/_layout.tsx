@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import { colors } from '../../src/theme/colors';
-import { ShoppingBag, Calendar, Plus } from 'lucide-react-native';
+import { ShoppingBag, Calendar, Plus, User } from 'lucide-react-native';
 
 export default function TabLayout() {
   return (
@@ -20,7 +20,7 @@ export default function TabLayout() {
         },
         tabBarLabelStyle: {
           fontFamily: 'Montserrat_500Medium',
-          fontSize: 12,
+          fontSize: 11,
         },
       }}
     >
@@ -33,19 +33,19 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Tab 2: Botón Central Flotante Agendar Cita */}
+      {/* Tab 2: Agendar Cita (acción principal destacada) */}
       <Tabs.Screen
         name="booking"
         options={{
           title: 'Agendar',
           tabBarIcon: () => (
-            <View style={styles.floatingButton}>
-              <Plus size={26} color={colors.primary[50]} />
+            <View style={styles.bookingChip}>
+              <Plus size={18} color={colors.primary[50]} />
             </View>
           ),
           tabBarLabelStyle: {
             fontFamily: 'Montserrat_600SemiBold',
-            fontSize: 12,
+            fontSize: 11,
             color: colors.primary[500],
           },
         }}
@@ -59,23 +59,31 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <Calendar size={size} color={color} />,
         }}
       />
+
+      {/* Tab 4: Perfil + Lealtad */}
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Perfil',
+          tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
+        }}
+      />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  floatingButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  bookingChip: {
+    width: 46,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: colors.primary[500],
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
 });

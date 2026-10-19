@@ -1,18 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { ServiceCard } from '../../src/components/molecules/ServiceCard';
 import { Button } from '../../src/components/atoms/Button';
 import { Input } from '../../src/components/atoms/Input';
 import { CatalogService } from '../../src/services/catalog.service';
 import { AppointmentsService } from '../../src/services/appointments.service';
 import { AuthService } from '../../src/services/auth.service';
-import { ServiceItem, BarberItem } from '../../src/types';
+import { ServiceItem, BarberItem, AppointmentItem } from '../../src/types';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
-import { Check, ArrowLeft, Calendar, User, Scissors } from 'lucide-react-native';
+import { Check, ArrowLeft, Calendar, User, Scissors, CalendarClock } from 'lucide-react-native';
 
-const AVAILABLE_HOURS = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
+const AVAILABLE_HOURS = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+
+function getLocalDateISO(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Horas que aún se pueden agendar (si la fecha es hoy, filtra las que ya pasaron)
+function getAvailableHours(date: string): string[] {
+  if (date !== getLocalDateISO()) return AVAILABLE_HOURS;
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  return AVAILABLE_HOURS.filter((hour) => {
+    const [h, m] = hour.split(':').map(Number);
+    return h * 60 + m > nowMinutes;
+  });
+}
 
 export default function BookingScreen() {
   const router = useRouter();
@@ -25,9 +44,10 @@ export default function BookingScreen() {
   // Estados de la reserva
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
   const [selectedBarber, setSelectedBarber] = useState<BarberItem | null>(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate] = useState(getLocalDateISO());
   const [selectedTime, setSelectedTime] = useState<string>('10:00');
   const [notes, setNotes] = useState('');
+  const [activeAppointment, setActiveAppointment] = useState<AppointmentItem | null>(null);
 
   useEffect(() => {
     async function init() {
@@ -49,8 +69,34 @@ export default function BookingScreen() {
     init();
   }, []);
 
+  // Guard: re-valida la cita activa cada vez que la pestaña gana foco
+  // (así se libera si el cliente canceló desde Mis Citas)
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      (async () => {
+        try {
+          const user = await AuthService.getCurrentUser();
+          const active = user ? await AppointmentsService.hasActiveAppointment(user.id) : null;
+          if (!cancelled) setActiveAppointment(active);
+        } catch {
+          // sin conexión o error: no bloquea el flujo
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [])
+  );
+
   const handleConfirmAppointment = async () => {
     if (!selectedService || !selectedBarber) return;
+
+    if (!getAvailableHours(selectedDate).includes(selectedTime)) {
+      Alert.alert('Horario no disponible', 'La hora seleccionada ya pasó. Elige otra hora.');
+      setStep(2);
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -62,7 +108,39 @@ export default function BookingScreen() {
         return;
       }
 
-      await AppointmentsService.createAppointment({
+      // Validación: una sola cita activa
+      const active = await AppointmentsService.hasActiveAppointment(user.id);
+      if (active) {
+        setActiveAppointment(active);
+        Alert.alert(
+          'Ya tienes una cita activa',
+          `Tienes una cita el ${active.date} a las ${active.start_time}. Cancela o espera a que termine para agendar otra.`
+        );
+        return;
+      }
+
+      // Validación: solape de horario con citas del barbero
+      const startMin = AppointmentsService.timeToMinutes(selectedTime);
+      const endMin = startMin + selectedService.duration;
+      const endH = String(Math.floor(endMin / 60) % 24).padStart(2, '0');
+      const endM = String(endMin % 60).padStart(2, '0');
+      const endTime = `${endH}:${endM}`;
+
+      const barberApts = await AppointmentsService.getBarberAppointmentsForDate(
+        selectedBarber.id,
+        selectedDate
+      );
+      const conflict = AppointmentsService.hasTimeConflict(selectedTime, endTime, barberApts);
+      if (conflict) {
+        Alert.alert(
+          'Horario ocupado',
+          `${selectedBarber.full_name} ya tiene una cita de ${conflict.start_time} a ${conflict.end_time}. Elige otra hora.`
+        );
+        setStep(2);
+        return;
+      }
+
+      const created = await AppointmentsService.createAppointment({
         clientId: user.id,
         clientName: profile?.full_name || user.email?.split('@')[0] || 'Cliente',
         clientEmail: user.email || '',
@@ -83,9 +161,10 @@ export default function BookingScreen() {
         'Tu cita ha sido registrada con éxito. Ya puedes ver tu pase QR en la pestaña Mis Citas.',
         [{ text: 'Ver Pase QR', onPress: () => router.push('/(tabs)/appointments') }]
       );
-      // Reset
+      // Con la cita creada, el guard muestra el bloqueo (no puede agendar otra)
       setStep(1);
       setSelectedService(null);
+      setActiveAppointment(created);
     } catch (err: any) {
       Alert.alert('Error al agendar', err.message || 'Ocurrió un error al guardar tu cita');
     } finally {
@@ -98,6 +177,28 @@ export default function BookingScreen() {
       <View style={styles.center}>
         <ActivityIndicator size="large" color={colors.primary[500]} />
       </View>
+    );
+  }
+
+  // Guard: ya tiene una cita activa
+  if (activeAppointment) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.blockedContainer}>
+          <CalendarClock size={56} color={colors.primary[500]} />
+          <Text style={styles.blockedTitle}>Ya tienes una cita activa</Text>
+          <Text style={styles.blockedDesc}>
+            Tu cita programada es el {activeAppointment.date} a las {activeAppointment.start_time} hrs
+            {' '}con {activeAppointment.barber_name || 'tu barbero'}. Cancela desde Mis Citas si
+            necesitas agendar otra.
+          </Text>
+          <Button
+            title="Ver Mis Citas"
+            onPress={() => router.push('/(tabs)/appointments')}
+            style={{ marginTop: 20, alignSelf: 'stretch' }}
+          />
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -131,7 +232,13 @@ export default function BookingScreen() {
 
             <Button
               title="Continuar"
-              onPress={() => setStep(2)}
+              onPress={() => {
+                const hours = getAvailableHours(selectedDate);
+                if (!hours.includes(selectedTime)) {
+                  setSelectedTime(hours[0] ?? '');
+                }
+                setStep(2);
+              }}
               disabled={!selectedService}
               style={{ marginTop: 16 }}
             />
@@ -169,13 +276,27 @@ export default function BookingScreen() {
             <View style={styles.hoursGrid}>
               {AVAILABLE_HOURS.map((hour) => {
                 const isSelected = selectedTime === hour;
+                const isPast = !getAvailableHours(selectedDate).includes(hour);
                 return (
                   <TouchableOpacity
                     key={hour}
+                    disabled={isPast}
                     onPress={() => setSelectedTime(hour)}
-                    style={[styles.hourChip, isSelected && styles.hourChipSelected]}
+                    style={[
+                      styles.hourChip,
+                      isSelected && styles.hourChipSelected,
+                      isPast && styles.hourChipDisabled,
+                    ]}
                   >
-                    <Text style={[styles.hourText, isSelected && styles.hourTextSelected]}>{hour}</Text>
+                    <Text
+                      style={[
+                        styles.hourText,
+                        isSelected && styles.hourTextSelected,
+                        isPast && styles.hourTextDisabled,
+                      ]}
+                    >
+                      {hour}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
@@ -184,7 +305,7 @@ export default function BookingScreen() {
             <Button
               title="Revisar Cita"
               onPress={() => setStep(3)}
-              disabled={!selectedBarber || !selectedTime}
+              disabled={!selectedBarber || !getAvailableHours(selectedDate).includes(selectedTime)}
               style={{ marginTop: 24 }}
             />
           </View>
@@ -341,6 +462,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary[500],
     borderColor: colors.primary[500],
   },
+  hourChipDisabled: {
+    opacity: 0.35,
+    backgroundColor: colors.cardAlt,
+  },
   hourText: {
     ...typography.bodySmall,
     fontWeight: '600',
@@ -348,6 +473,10 @@ const styles = StyleSheet.create({
   },
   hourTextSelected: {
     color: colors.primary[50],
+  },
+  hourTextDisabled: {
+    color: colors.text.muted,
+    textDecorationLine: 'line-through',
   },
   summaryCard: {
     backgroundColor: colors.card,
@@ -385,5 +514,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,
+  },
+  blockedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+  },
+  blockedTitle: {
+    ...typography.h2,
+    color: colors.text.heading,
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  blockedDesc: {
+    ...typography.bodySmall,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    marginTop: 8,
   },
 });

@@ -1,4 +1,5 @@
 import { TextStyle } from 'react-native';
+import { colors } from './colors';
 
 export const typography = {
   // Fuentes cargadas con @expo-google-fonts/montserrat
@@ -14,35 +15,35 @@ export const typography = {
     fontFamily: 'Montserrat_700Bold',
     fontSize: 28,
     lineHeight: 34,
-    color: '#371B11',
+    color: colors.text.heading,
   } as TextStyle,
 
   h2: {
     fontFamily: 'Montserrat_600SemiBold',
     fontSize: 22,
     lineHeight: 28,
-    color: '#371B11',
+    color: colors.text.heading,
   } as TextStyle,
 
   h3: {
     fontFamily: 'Montserrat_600SemiBold',
     fontSize: 18,
     lineHeight: 24,
-    color: '#371B11',
+    color: colors.text.heading,
   } as TextStyle,
 
   body: {
     fontFamily: 'Montserrat_400Regular',
     fontSize: 16,
     lineHeight: 22,
-    color: '#82442A',
+    color: colors.text.primary,
   } as TextStyle,
 
   bodySmall: {
     fontFamily: 'Montserrat_400Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: '#82442A',
+    color: colors.text.primary,
   } as TextStyle,
 
   button: {
@@ -55,7 +56,7 @@ export const typography = {
     fontFamily: 'Montserrat_400Regular',
     fontSize: 12,
     lineHeight: 16,
-    color: '#A2532C',
+    color: colors.text.secondary,
   } as TextStyle,
 } as const;
 
