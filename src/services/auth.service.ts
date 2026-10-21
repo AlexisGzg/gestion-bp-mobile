@@ -48,6 +48,7 @@ export const AuthService = {
       scheme: 'gestion-bp-mobile',
       path: 'auth/callback',
     });
+    console.log('REDIRECT URL GENERADA:', redirectUrl);
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -59,8 +60,16 @@ export const AuthService = {
 
     if (error) throw error;
     if (!data?.url) throw new Error('No se pudo iniciar la autenticación con Google.');
+    console.log('REDIRECT_TO ENVIADO A SUPABASE:', new URL(data.url).searchParams.get('redirect_to'));
 
     const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+    console.log('RESULTADO GOOGLE OAUTH:', {
+      type: result.type,
+      callback:
+        result.type === 'success'
+          ? `${new URL(result.url).origin}${new URL(result.url).pathname}`
+          : null,
+    });
     if (result.type !== 'success' || !result.url) return null;
 
     const callbackUrl = new URL(result.url);
