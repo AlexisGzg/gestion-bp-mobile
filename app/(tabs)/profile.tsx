@@ -53,7 +53,7 @@ export default function ProfileScreen() {
       const { data: c } = await supabase
         .from('clients')
         .select('*')
-        .eq('profile_id', u?.id)
+        .or(`profile_id.eq.${u?.id}`)
         .maybeSingle();
       setClient(c);
 

@@ -7,8 +7,6 @@ import { AuthService } from '../../src/services/auth.service';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 
-const isValidEmail = (value: string) => /\S+@\S+\.\S+/.test(value.trim());
-
 export default function RegisterScreen() {
   const router = useRouter();
   const [name, setName] = useState('');
@@ -23,10 +21,6 @@ export default function RegisterScreen() {
       Alert.alert('Campos obligatorios', 'Por favor llena todos los campos');
       return;
     }
-    if (!isValidEmail(email)) {
-      Alert.alert('Correo inválido', 'Ingresa un correo electrónico válido');
-      return;
-    }
 
     if (password.length < 6) {
       Alert.alert('Contraseña débil', 'La contraseña debe tener al menos 6 caracteres');
@@ -39,7 +33,7 @@ export default function RegisterScreen() {
       Alert.alert('¡Cuenta creada!', 'Tu cuenta ha sido registrada con éxito. Ya puedes iniciar sesión.');
       router.replace('/(auth)/login');
     } catch (err: any) {
-      Alert.alert('Error al registrarse', 'No se pudo crear la cuenta. Intenta con otro correo.');
+      Alert.alert('Error al registrarse', err.message || 'No se pudo crear la cuenta');
     } finally {
       setLoading(false);
     }
