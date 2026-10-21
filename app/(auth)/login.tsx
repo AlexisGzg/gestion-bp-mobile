@@ -8,6 +8,8 @@ import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { Scissors } from 'lucide-react-native';
 
+const isValidEmail = (value: string) => /\S+@\S+\.\S+/.test(value.trim());
+
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -20,12 +22,16 @@ export default function LoginScreen() {
       Alert.alert('Campos incompletos', 'Ingresa tu correo y contraseña');
       return;
     }
+    if (!isValidEmail(email)) {
+      Alert.alert('Correo inválido', 'Ingresa un correo electrónico válido');
+      return;
+    }
 
     try {
       setLoading(true);
       await AuthService.login(email, password);
     } catch (err: any) {
-      Alert.alert('Error de inicio de sesión', err.message || 'Credenciales incorrectas');
+      Alert.alert('Error de inicio de sesión', 'Correo o contraseña incorrectos');
     } finally {
       setLoading(false);
     }
