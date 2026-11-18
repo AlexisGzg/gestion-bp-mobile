@@ -30,7 +30,7 @@ export default function AppointmentsScreen() {
     try {
       setLoading(true);
       const user = await AuthService.getCurrentUser();
-      const profile = await AuthService.getCurrentUserProfile();
+      const profile = await AuthService.getCurrentUserProfile(user?.id);
 
       if (user) {
         setUserName(profile?.full_name || user.email?.split('@')[0] || 'Cliente');

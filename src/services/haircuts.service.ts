@@ -12,20 +12,11 @@ export const HaircutsService = {
    * Obtiene los cortes recomendados para una forma de rostro específica.
    */
   async getRecommendedHaircuts(faceShape: FaceShape): Promise<Haircut[]> {
-    // Simula una breve resolución asíncrona idéntica a una consulta a Supabase
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const matches = HAIRCUTS_CATALOG.filter((haircut) =>
-          haircut.faceShapes.includes(faceShape)
-        );
-        // Si no hubiera coincidencia directa, devolver cortes versátiles
-        if (matches.length === 0) {
-          resolve(HAIRCUTS_CATALOG.slice(0, 3));
-        } else {
-          resolve(matches);
-        }
-      }, 150);
-    });
+    const matches = HAIRCUTS_CATALOG.filter((haircut) =>
+      haircut.faceShapes.includes(faceShape)
+    );
+    // Si no hubiera coincidencia directa, devolver cortes versátiles
+    return matches.length === 0 ? HAIRCUTS_CATALOG.slice(0, 3) : matches;
   },
 
   /**

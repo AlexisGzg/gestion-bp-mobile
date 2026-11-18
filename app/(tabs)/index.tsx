@@ -42,7 +42,7 @@ export default function WelcomeDashboardScreen() {
   const loadDashboardData = async () => {
     try {
       const user = await AuthService.getCurrentUser();
-      const profile = await AuthService.getCurrentUserProfile();
+      const profile = await AuthService.getCurrentUserProfile(user?.id);
 
       if (user) {
         const name = profile?.first_name || profile?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'Alejandro';

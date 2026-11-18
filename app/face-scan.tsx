@@ -69,23 +69,17 @@ export default function FaceScanScreen() {
     setState('scanning');
     setScanMessage('Detectando puntos faciales...');
 
-    setTimeout(() => {
-      setScanMessage('Calculando proporciones de pómulos y mandíbula...');
-    }, 1000);
-
     try {
       const nativeSupported = FaceShapeService.isNativeSupported();
       const result = await FaceShapeService.detectFaceShape(uri);
 
-      setTimeout(async () => {
-        if (result && result.detected) {
-          setSelectedShape(result.faceShape);
-          await loadHaircuts(result.faceShape);
-          setState('success');
-        } else {
-          setState(nativeSupported ? 'no_face' : 'native_unavailable');
-        }
-      }, 1800);
+      if (result && result.detected) {
+        setSelectedShape(result.faceShape);
+        await loadHaircuts(result.faceShape);
+        setState('success');
+      } else {
+        setState(nativeSupported ? 'no_face' : 'native_unavailable');
+      }
     } catch {
       setState('error');
     }

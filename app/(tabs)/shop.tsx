@@ -47,11 +47,11 @@ export default function ShopScreen() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [cats, prods] = await Promise.all([
-        CatalogService.getCategories(),
-        CatalogService.getProducts(),
-      ]);
-      setCategories(cats);
+      const prods = await CatalogService.getProducts();
+      const uniqueCategories = Array.from(
+        new Set(prods.map((product) => product.category).filter(Boolean))
+      );
+      setCategories(['Todos', ...uniqueCategories]);
       setProducts(prods);
     } catch {
       showAlert({
@@ -83,13 +83,13 @@ export default function ShopScreen() {
     });
   }, [products, searchTerm, selectedCategory, selectedPrice]);
 
-  const handleAddToCart = (product: ProductItem) => {
+  const handleAddToCart = useCallback((product: ProductItem) => {
     showAlert({
       title: 'Producto añadido',
       message: `Has agregado "${product.name}" a tu carrito de compras.`,
       type: 'success',
     });
-  };
+  }, [showAlert]);
 
   const listHeader = (
     <>

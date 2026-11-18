@@ -42,7 +42,7 @@ export default function ProfileScreen() {
     try {
       setLoading(true);
       const u = await AuthService.getCurrentUser();
-      const p = await AuthService.getCurrentUserProfile();
+      const p = await AuthService.getCurrentUserProfile(u?.id);
       setUser(u);
       setProfile(p);
       setFirstName(p?.first_name || u?.user_metadata?.first_name || '');

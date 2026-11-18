@@ -114,14 +114,14 @@ export const AuthService = {
   },
 
   // Obtener perfil completo del cliente desde la tabla 'profiles'
-  async getCurrentUserProfile(): Promise<UserProfile | null> {
-    const user = await this.getCurrentUser();
-    if (!user) return null;
+  async getCurrentUserProfile(userId?: string): Promise<UserProfile | null> {
+    const id = userId ?? (await this.getCurrentUser())?.id;
+    if (!id) return null;
 
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', user.id)
+      .eq('id', id)
       .single();
 
     if (error || !data) return null;

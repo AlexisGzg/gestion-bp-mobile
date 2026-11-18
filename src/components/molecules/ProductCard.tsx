@@ -11,7 +11,7 @@ interface ProductCardProps {
   onPress: (product: ProductItem) => void;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onPress }) => {
+export const ProductCard = React.memo<ProductCardProps>(({ product, onAddToCart, onPress }) => {
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={() => onPress(product)}>
       <View style={styles.cardInner}>
@@ -48,7 +48,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
       </View>
     </TouchableOpacity>
   );
-};
+});
+ProductCard.displayName = 'ProductCard';
 
 const styles = StyleSheet.create({
   card: {
