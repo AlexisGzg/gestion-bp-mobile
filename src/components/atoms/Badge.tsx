@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { AppointmentStatus } from '../../types';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { typography } from '../../theme/typography';
 
 interface BadgeProps {
@@ -9,6 +9,8 @@ interface BadgeProps {
 }
 
 export const Badge: React.FC<BadgeProps> = ({ status }) => {
+  const { colors } = useTheme();
+
   const getBadgeConfig = () => {
     switch (status) {
       case 'confirmed':
@@ -45,6 +47,7 @@ const styles = StyleSheet.create({
   },
   text: {
     ...typography.caption,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 });

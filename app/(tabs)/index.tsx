@@ -18,6 +18,7 @@ import { AppointmentItem, ServiceItem } from '../../src/types';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { QRModal } from '../../src/components/organisms/QRModal';
+import { useTheme } from '../../src/context/ThemeContext';
 import {
   Scissors,
   Calendar,
@@ -25,13 +26,13 @@ import {
   ArrowRight,
   User,
   Crown,
-  Bell,
   Clock,
   ChevronRight,
 } from 'lucide-react-native';
 
 export default function WelcomeDashboardScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const [userName, setUserName] = useState('Alejandro');
   const [activeAppointment, setActiveAppointment] = useState<AppointmentItem | null>(null);
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -87,29 +88,33 @@ export default function WelcomeDashboardScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary[500]} />
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Barra de cabecera con Marca y Notificación */}
-      <View style={styles.topBar}>
-        <View style={styles.brandBox}>
-          <View style={styles.brandIconBox}>
-            <Scissors size={20} color={colors.primary[500]} />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Top Bar refinada y horizontal */}
+      <View style={[styles.topBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <View style={styles.topBarLeft}>
+          <View style={[styles.brandIconBox, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}>
+            <Scissors size={18} color={colors.primary[500]} />
           </View>
-          <View>
-            <Text style={styles.brandTitle}>CORTESÍA BARBERÍA</Text>
-            <Text style={styles.brandSubtitle}>GESTIÓN BARBER PRO</Text>
+          <View style={styles.brandTextBox}>
+            <Text style={[styles.brandSuper, { color: colors.primary[500] }]}>GESTIÓN BARBER PRO</Text>
+            <Text style={[styles.brandTitle, { color: colors.text.heading }]}>¡Hola, {userName}!</Text>
           </View>
         </View>
 
-        <TouchableOpacity activeOpacity={0.8} style={styles.bellButton}>
-          <Bell size={20} color={colors.primary[500]} />
-          <View style={styles.bellDot} />
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={[styles.vipBadgePill, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
+          onPress={() => router.push('/(tabs)/profile')}
+        >
+          <Crown size={14} color={colors.primary[500]} />
+          <Text style={[styles.vipBadgeText, { color: colors.text.heading }]}>VIP</Text>
         </TouchableOpacity>
       </View>
 
@@ -120,12 +125,6 @@ export default function WelcomeDashboardScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[500]} />
         }
       >
-        {/* Saludo Personalizado de Bienvenida */}
-        <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeSub}>Bienvenido de nuevo,</Text>
-          <Text style={styles.welcomeName}>{userName}!</Text>
-        </View>
-
         {/* TARJETA VIP: RECOMENDADOR DE CORTES CON IA (MÓDULO NUEVO DESTACADO) */}
         <TouchableOpacity
           activeOpacity={0.88}
@@ -163,6 +162,10 @@ export default function WelcomeDashboardScreen() {
 
         {activeAppointment ? (
           <View style={styles.appointmentCard}>
+            {/* Muescas laterales de ticket */}
+            <View style={styles.ticketNotchLeft} />
+            <View style={styles.ticketNotchRight} />
+
             <View style={styles.appointmentDateRow}>
               <View style={styles.appointmentDateLeft}>
                 <Calendar size={18} color={colors.primary[500]} />
@@ -175,7 +178,9 @@ export default function WelcomeDashboardScreen() {
               </View>
             </View>
 
-            <View style={styles.appointmentDivider} />
+            <View style={styles.ticketDashedRow}>
+              <View style={styles.ticketDashedLine} />
+            </View>
 
             <View style={styles.appointmentBottomRow}>
               <View style={styles.appointmentBarberBox}>
@@ -316,134 +321,110 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 14,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
   },
-  brandBox: {
+  topBarLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  brandIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.cardAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
+  brandTextBox: {
     justifyContent: 'center',
-    alignItems: 'center',
+  },
+  brandSuper: {
+    fontSize: 9,
+    fontFamily: typography.family.bold,
+    letterSpacing: 1.5,
   },
   brandTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: typography.family.bold,
-    color: colors.text.heading,
-    letterSpacing: 1.2,
+    letterSpacing: 0.3,
   },
-  brandSubtitle: {
-    fontSize: 9,
-    fontFamily: typography.family.medium,
-    color: colors.text.muted,
-    letterSpacing: 0.8,
-  },
-  bellButton: {
+  brandIconBox: {
     width: 38,
     height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.cardAlt,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
   },
-  bellDot: {
-    position: 'absolute',
-    top: 9,
-    right: 10,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: colors.primary[500],
+  vipBadgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  vipBadgeText: {
+    fontSize: 11,
+    fontFamily: typography.family.bold,
   },
   scroll: {
     paddingHorizontal: 20,
     paddingTop: 18,
-    paddingBottom: 32,
-  },
-  welcomeSection: {
-    marginBottom: 20,
-  },
-  welcomeSub: {
-    ...typography.caption,
-    color: colors.text.secondary,
-    fontSize: 13,
-  },
-  welcomeName: {
-    ...typography.h1,
-    color: colors.text.heading,
-    fontSize: 26,
-    letterSpacing: 0.5,
-    marginTop: 2,
+    paddingBottom: 110,
   },
   recommenderCard: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.primary[950],
     borderRadius: 22,
     padding: 20,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: colors.primary[400],
     marginBottom: 24,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 4,
+    shadowColor: colors.primary[950],
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 5,
   },
   recommenderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   recommenderBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
     backgroundColor: colors.primary[500],
-    paddingHorizontal: 9,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 12,
   },
   recommenderBadgeText: {
     fontSize: 10,
     fontFamily: typography.family.bold,
     color: colors.primary[50],
+    letterSpacing: 0.8,
   },
   recommenderPrivacy: {
-    backgroundColor: colors.cardAlt,
+    backgroundColor: 'rgba(233, 213, 159, 0.15)',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(209, 156, 62, 0.4)',
   },
   recommenderPrivacyText: {
     fontSize: 10,
-    color: colors.text.secondary,
+    color: colors.primary[200],
     fontFamily: typography.family.medium,
   },
   recommenderTitle: {
     ...typography.h2,
-    color: colors.text.heading,
+    color: colors.primary[50],
     fontSize: 19,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   recommenderDesc: {
     ...typography.bodySmall,
-    color: colors.text.primary,
+    color: colors.primary[200],
     lineHeight: 20,
     marginBottom: 16,
   },
@@ -459,10 +440,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 14,
-    shadowColor: colors.shadow,
+    shadowColor: colors.primary[500],
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOpacity: 0.35,
+    shadowRadius: 5,
     elevation: 3,
   },
   recommenderCtaText: {
@@ -488,17 +469,54 @@ const styles = StyleSheet.create({
     fontFamily: typography.family.semiBold,
   },
   appointmentCard: {
+    position: 'relative',
     backgroundColor: colors.card,
     borderRadius: 20,
     padding: 18,
     borderWidth: 1.5,
     borderColor: colors.border,
-    shadowColor: colors.shadow,
+    shadowColor: colors.primary[950],
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
     marginBottom: 10,
+    overflow: 'hidden',
+  },
+  ticketNotchLeft: {
+    position: 'absolute',
+    left: -11,
+    top: 48,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.background,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    zIndex: 2,
+  },
+  ticketNotchRight: {
+    position: 'absolute',
+    right: -11,
+    top: 48,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.background,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    zIndex: 2,
+  },
+  ticketDashedRow: {
+    position: 'relative',
+    marginVertical: 12,
+    justifyContent: 'center',
+  },
+  ticketDashedLine: {
+    borderBottomWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.divider,
+    marginHorizontal: 8,
   },
   appointmentDateRow: {
     flexDirection: 'row',

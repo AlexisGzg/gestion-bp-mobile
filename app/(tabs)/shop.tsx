@@ -17,7 +17,8 @@ import { ProductItem } from '../../src/types';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { useAlert } from '../../src/context/AlertContext';
-import { ShoppingBag, Search } from 'lucide-react-native';
+import { useTheme } from '../../src/context/ThemeContext';
+import { ShoppingBag, Search, Sparkles } from 'lucide-react-native';
 
 const PRICE_RANGES = [
   { value: 'all', label: 'Todos' },
@@ -36,6 +37,7 @@ const FILTER_BY_PRICE: Record<string, (price: number) => boolean> = {
 
 export default function ShopScreen() {
   const { showAlert } = useAlert();
+  const { colors, isDark } = useTheme();
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [categories, setCategories] = useState<string[]>(['Todos']);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
@@ -94,17 +96,28 @@ export default function ShopScreen() {
   const listHeader = (
     <>
       <View style={styles.header}>
-        <Text style={styles.title}>Boutique & Productos</Text>
-        <Text style={styles.subtitle}>Pomadas, ceras, tónicos y cuidado profesional para barbería</Text>
+        <Text style={[styles.title, { color: colors.text.heading }]}>Boutique & Productos</Text>
+        <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
+          Pomadas, ceras, tónicos y cuidado profesional para barbería
+        </Text>
       </View>
 
       {/* Buscador refinado */}
-      <View style={styles.searchWrapper}>
+      <View
+        style={[
+          styles.searchWrapper,
+          {
+            backgroundColor: isDark ? colors.cardAlt : colors.surface,
+            borderColor: colors.border,
+            shadowColor: colors.shadow,
+          },
+        ]}
+      >
         <Search size={18} color={colors.primary[500]} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: colors.text.primary }]}
           placeholder="Buscar producto, marca o fijador..."
-          placeholderTextColor={colors.text.muted}
+          placeholderTextColor={isDark ? colors.text.muted : colors.primary[400]}
           value={searchTerm}
           onChangeText={setSearchTerm}
           returnKeyType="search"
@@ -112,7 +125,7 @@ export default function ShopScreen() {
       </View>
 
       {/* Filtro: Categoría */}
-      <Text style={styles.filterLabel}>Categorías</Text>
+      <Text style={[styles.filterLabel, { color: colors.text.muted }]}>CATEGORÍAS</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -125,16 +138,31 @@ export default function ShopScreen() {
               key={item}
               activeOpacity={0.8}
               onPress={() => setSelectedCategory(item)}
-              style={[styles.chip, isSelected && styles.chipActive]}
+              style={[
+                styles.chip,
+                { backgroundColor: colors.cardAlt, borderColor: colors.border },
+                isSelected && {
+                  backgroundColor: colors.primary[500],
+                  borderColor: colors.primary[400],
+                },
+              ]}
             >
-              <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>{item}</Text>
+              <Text
+                style={[
+                  styles.chipText,
+                  { color: colors.text.primary },
+                  isSelected && { color: isDark ? colors.primary[950] : colors.primary[50], fontWeight: '700' },
+                ]}
+              >
+                {item}
+              </Text>
             </TouchableOpacity>
           );
         })}
       </ScrollView>
 
       {/* Filtro: Precio */}
-      <Text style={styles.filterLabel}>Rango de precio</Text>
+      <Text style={[styles.filterLabel, { color: colors.text.muted }]}>RANGO DE PRECIO</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -147,16 +175,31 @@ export default function ShopScreen() {
               key={range.value}
               activeOpacity={0.8}
               onPress={() => setSelectedPrice(range.value)}
-              style={[styles.chip, isSelected && styles.chipActive]}
+              style={[
+                styles.chip,
+                { backgroundColor: colors.cardAlt, borderColor: colors.border },
+                isSelected && {
+                  backgroundColor: colors.primary[500],
+                  borderColor: colors.primary[400],
+                },
+              ]}
             >
-              <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>{range.label}</Text>
+              <Text
+                style={[
+                  styles.chipText,
+                  { color: colors.text.primary },
+                  isSelected && { color: isDark ? colors.primary[950] : colors.primary[50], fontWeight: '700' },
+                ]}
+              >
+                {range.label}
+              </Text>
             </TouchableOpacity>
           );
         })}
       </ScrollView>
 
       {!loading && (
-        <Text style={styles.resultsCount}>
+        <Text style={[styles.resultsCount, { color: colors.text.secondary }]}>
           {filteredProducts.length} {filteredProducts.length === 1 ? 'producto disponible' : 'productos disponibles'}
         </Text>
       )}
@@ -164,7 +207,27 @@ export default function ShopScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Top Bar fija y elegante */}
+      <View style={[styles.topBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <View style={styles.topBarLeft}>
+          <View style={[styles.topBarIconBox, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}>
+            <ShoppingBag size={18} color={colors.primary[500]} />
+          </View>
+          <View>
+            <Text style={[styles.topBarSuper, { color: colors.primary[500] }]}>GESTIÓN BARBER PRO</Text>
+            <Text style={[styles.topBarTitle, { color: colors.text.heading }]}>Boutique & Cuidado</Text>
+          </View>
+        </View>
+
+        <View style={[styles.topBarBadge, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}>
+          <Sparkles size={12} color={colors.primary[500]} />
+          <Text style={[styles.topBarBadgeText, { color: colors.text.heading }]}>
+            {filteredProducts.length} items
+          </Text>
+        </View>
+      </View>
+
       <FlatList
         data={filteredProducts}
         keyExtractor={(item) => item.id}
@@ -179,13 +242,13 @@ export default function ShopScreen() {
         ListHeaderComponent={listHeader}
         ListEmptyComponent={
           loading ? (
-            <View style={styles.center}>
+            <View style={[styles.center, { backgroundColor: colors.background }]}>
               <ActivityIndicator size="large" color={colors.primary[500]} />
             </View>
           ) : (
-            <View style={styles.center}>
+            <View style={[styles.center, { backgroundColor: colors.background }]}>
               <ShoppingBag size={48} color={colors.primary[300]} />
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, { color: colors.text.secondary }]}>
                 No hay productos disponibles con los filtros seleccionados
               </Text>
             </View>
@@ -205,7 +268,51 @@ export default function ShopScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+  },
+  topBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  topBarIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  topBarSuper: {
+    fontSize: 9,
+    fontFamily: typography.family.bold,
+    letterSpacing: 1.5,
+  },
+  topBarTitle: {
+    fontSize: 16,
+    fontFamily: typography.family.bold,
+    letterSpacing: 0.3,
+  },
+  topBarBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  topBarBadgeText: {
+    fontSize: 11,
+    fontFamily: typography.family.bold,
   },
   header: {
     paddingTop: 16,
@@ -285,7 +392,7 @@ const styles = StyleSheet.create({
   },
   productsList: {
     paddingHorizontal: 20,
-    paddingBottom: 24,
+    paddingBottom: 110,
   },
   columnWrapper: {
     justifyContent: 'space-between',

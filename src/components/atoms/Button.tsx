@@ -1,7 +1,11 @@
+/* eslint-disable react-hooks/immutability */
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
-import { colors } from '../../theme/colors';
+import { Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, Pressable } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { useTheme } from '../../context/ThemeContext';
 import { typography } from '../../theme/typography';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface ButtonProps {
   title: string;
@@ -24,43 +28,86 @@ export const Button: React.FC<ButtonProps> = ({
   textStyle,
   icon,
 }) => {
-  const getContainerStyle = () => {
-    switch (variant) {
-      case 'outline':
-        return styles.outlineContainer;
-      case 'ghost':
-        return styles.ghostContainer;
-      case 'danger':
-        return styles.dangerContainer;
-      case 'primary':
-      default:
-        return styles.primaryContainer;
+  const { colors, isDark } = useTheme();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    if (!disabled && !loading) {
+      scale.value = withSpring(0.96, { damping: 14, stiffness: 240 });
     }
   };
 
-  const getTextStyle = () => {
+  const handlePressOut = () => {
+    if (!disabled && !loading) {
+      scale.value = withSpring(1, { damping: 14, stiffness: 240 });
+    }
+  };
+
+  const getContainerStyle = (): ViewStyle => {
     switch (variant) {
       case 'outline':
-        return styles.outlineText;
+        return {
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          borderColor: colors.primary[500],
+        };
       case 'ghost':
-        return styles.ghostText;
+        return {
+          backgroundColor: 'transparent',
+        };
       case 'danger':
-        return styles.dangerText;
+        return {
+          backgroundColor: colors.status.cancelled,
+        };
       case 'primary':
       default:
-        return styles.primaryText;
+        return {
+          backgroundColor: colors.primary[500],
+          shadowColor: colors.shadow,
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: isDark ? 0.4 : 0.2,
+          shadowRadius: 6,
+          elevation: 3,
+        };
+    }
+  };
+
+  const getTextStyle = (): TextStyle => {
+    switch (variant) {
+      case 'outline':
+        return { color: colors.primary[500] };
+      case 'ghost':
+        return { color: colors.text.secondary };
+      case 'danger':
+        return { color: colors.white };
+      case 'primary':
+      default:
+        return { color: isDark ? colors.primary[950] : colors.primary[50] };
     }
   };
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
+    <AnimatedPressable
       onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={disabled || loading}
-      style={[styles.baseContainer, getContainerStyle(), (disabled || loading) && styles.disabled, style]}
+      style={[
+        styles.baseContainer,
+        getContainerStyle(),
+        (disabled || loading) && styles.disabled,
+        animatedStyle,
+        style,
+      ]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? colors.primary[50] : colors.primary[500]} />
+        <ActivityIndicator
+          color={variant === 'primary' ? (isDark ? colors.primary[950] : colors.primary[50]) : colors.primary[500]}
+        />
       ) : (
         <>
           {icon}
@@ -69,54 +116,23 @@ export const Button: React.FC<ButtonProps> = ({
           </Text>
         </>
       )}
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 };
 
 const styles = StyleSheet.create({
   baseContainer: {
     height: 48,
-    borderRadius: 12,
+    borderRadius: 14,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
-  },
-  primaryContainer: {
-    backgroundColor: colors.primary[500],
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  outlineContainer: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: colors.primary[500],
-  },
-  ghostContainer: {
-    backgroundColor: 'transparent',
-  },
-  dangerContainer: {
-    backgroundColor: colors.status.cancelled,
   },
   disabled: {
     opacity: 0.5,
   },
   baseText: {
     ...typography.button,
-  },
-  primaryText: {
-    color: colors.primary[50],
-  },
-  outlineText: {
-    color: colors.primary[500],
-  },
-  ghostText: {
-    color: colors.text.secondary,
-  },
-  dangerText: {
-    color: colors.white,
   },
 });

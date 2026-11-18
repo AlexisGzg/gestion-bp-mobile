@@ -11,6 +11,7 @@ import {
 import { supabase } from '../src/lib/supabase';
 import { colors } from '../src/theme/colors';
 import { AlertProvider } from '../src/context/AlertContext';
+import { ThemeProvider } from '../src/context/ThemeContext';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -63,18 +64,20 @@ export default function RootLayout() {
   }
 
   return (
-    <AlertProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="face-scan"
-          options={{
-            headerShown: false,
-            animation: 'slide_from_right',
-          }}
-        />
-      </Stack>
-    </AlertProvider>
+    <ThemeProvider>
+      <AlertProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="face-scan"
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right',
+            }}
+          />
+        </Stack>
+      </AlertProvider>
+    </ThemeProvider>
   );
 }

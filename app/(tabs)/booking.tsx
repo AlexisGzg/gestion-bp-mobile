@@ -19,6 +19,7 @@ import { ServiceItem, BarberItem, AppointmentItem } from '../../src/types';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { useAlert } from '../../src/context/AlertContext';
+import { useTheme } from '../../src/context/ThemeContext';
 import {
   Check,
   ArrowLeft,
@@ -67,6 +68,7 @@ function getAvailableHours(date: string): string[] {
 export default function BookingScreen() {
   const router = useRouter();
   const { showAlert } = useAlert();
+  const { colors, isDark } = useTheme();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -228,7 +230,7 @@ export default function BookingScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary[500]} />
       </View>
     );
@@ -236,13 +238,13 @@ export default function BookingScreen() {
 
   if (activeAppointment) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.blockedContainer}>
-          <View style={styles.blockedIconBox}>
+          <View style={[styles.blockedIconBox, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}>
             <CalendarClock size={52} color={colors.primary[500]} />
           </View>
-          <Text style={styles.blockedTitle}>Ya tienes una cita activa</Text>
-          <Text style={styles.blockedDesc}>
+          <Text style={[styles.blockedTitle, { color: colors.text.heading }]}>Ya tienes una cita activa</Text>
+          <Text style={[styles.blockedDesc, { color: colors.text.secondary }]}>
             Tu cita programada es el {activeAppointment.date} a las {activeAppointment.start_time} hrs
             con {activeAppointment.barber_name || 'tu barbero'}. Cancela desde Historial si necesitas agendar otra.
           </Text>
@@ -257,46 +259,172 @@ export default function BookingScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Cabecera con Indicador de Pasos */}
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Cabecera Refinada */}
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         {step > 1 ? (
-          <TouchableOpacity onPress={() => setStep((step - 1) as any)} style={styles.backButton}>
-            <ArrowLeft size={20} color={colors.text.heading} />
+          <TouchableOpacity
+            onPress={() => setStep((step - 1) as any)}
+            style={[styles.backButton, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
+          >
+            <ArrowLeft size={18} color={colors.text.heading} />
           </TouchableOpacity>
         ) : (
-          <View style={{ width: 36 }} />
+          <View style={[styles.headerIconBadge, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}>
+            <Scissors size={18} color={colors.primary[500]} />
+          </View>
         )}
 
-        <Text style={styles.headerTitle}>RESERVAR CITA</Text>
-        <View style={{ width: 36 }} />
+        <View style={styles.headerTitleBox}>
+          <Text style={[styles.headerSuper, { color: colors.primary[500] }]}>GESTIÓN BARBER PRO</Text>
+          <Text style={[styles.headerTitle, { color: colors.text.heading }]}>Agendar Cita</Text>
+        </View>
+
+        <View style={[styles.stepIndicatorBadge, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}>
+          <Text style={[styles.stepIndicatorText, { color: colors.primary[500] }]}>Paso {step}/4</Text>
+        </View>
       </View>
 
-      {/* Indicador de 3 Pasos Visual */}
-      <View style={styles.stepsBar}>
+      {/* Indicador de Pasos Visual */}
+      <View style={[styles.stepsBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <View style={styles.stepItem}>
-          <View style={[styles.stepCircle, step >= 1 && styles.stepCircleActive]}>
-            <Text style={[styles.stepNumber, step >= 1 && styles.stepNumberActive]}>1</Text>
+          <View
+            style={[
+              styles.stepCircle,
+              { backgroundColor: colors.cardAlt, borderColor: colors.border },
+              step >= 1 && { backgroundColor: colors.primary[500], borderColor: colors.primary[500] },
+            ]}
+          >
+            <Text
+              style={[
+                styles.stepNumber,
+                { color: colors.text.muted },
+                step >= 1 && { color: isDark ? colors.primary[950] : colors.primary[50] },
+              ]}
+            >
+              1
+            </Text>
           </View>
-          <Text style={[styles.stepLabel, step >= 1 && styles.stepLabelActive]}>Servicios</Text>
+          <Text
+            style={[
+              styles.stepLabel,
+              { color: colors.text.muted },
+              step >= 1 && { color: colors.text.heading, fontFamily: typography.family.bold },
+            ]}
+          >
+            Servicio
+          </Text>
         </View>
 
-        <View style={[styles.stepConnector, step >= 2 && styles.stepConnectorActive]} />
+        <View
+          style={[
+            styles.stepConnector,
+            { backgroundColor: colors.divider },
+            step >= 2 && { backgroundColor: colors.primary[500] },
+          ]}
+        />
 
         <View style={styles.stepItem}>
-          <View style={[styles.stepCircle, step >= 2 && styles.stepCircleActive]}>
-            <Text style={[styles.stepNumber, step >= 2 && styles.stepNumberActive]}>2</Text>
+          <View
+            style={[
+              styles.stepCircle,
+              { backgroundColor: colors.cardAlt, borderColor: colors.border },
+              step >= 2 && { backgroundColor: colors.primary[500], borderColor: colors.primary[500] },
+            ]}
+          >
+            <Text
+              style={[
+                styles.stepNumber,
+                { color: colors.text.muted },
+                step >= 2 && { color: isDark ? colors.primary[950] : colors.primary[50] },
+              ]}
+            >
+              2
+            </Text>
           </View>
-          <Text style={[styles.stepLabel, step >= 2 && styles.stepLabelActive]}>Barbero</Text>
+          <Text
+            style={[
+              styles.stepLabel,
+              { color: colors.text.muted },
+              step >= 2 && { color: colors.text.heading, fontFamily: typography.family.bold },
+            ]}
+          >
+            Barbero
+          </Text>
         </View>
 
-        <View style={[styles.stepConnector, step >= 3 && styles.stepConnectorActive]} />
+        <View
+          style={[
+            styles.stepConnector,
+            { backgroundColor: colors.divider },
+            step >= 3 && { backgroundColor: colors.primary[500] },
+          ]}
+        />
 
         <View style={styles.stepItem}>
-          <View style={[styles.stepCircle, step >= 3 && styles.stepCircleActive]}>
-            <Text style={[styles.stepNumber, step >= 3 && styles.stepNumberActive]}>3</Text>
+          <View
+            style={[
+              styles.stepCircle,
+              { backgroundColor: colors.cardAlt, borderColor: colors.border },
+              step >= 3 && { backgroundColor: colors.primary[500], borderColor: colors.primary[500] },
+            ]}
+          >
+            <Text
+              style={[
+                styles.stepNumber,
+                { color: colors.text.muted },
+                step >= 3 && { color: isDark ? colors.primary[950] : colors.primary[50] },
+              ]}
+            >
+              3
+            </Text>
           </View>
-          <Text style={[styles.stepLabel, step >= 3 && styles.stepLabelActive]}>Fecha/Hora</Text>
+          <Text
+            style={[
+              styles.stepLabel,
+              { color: colors.text.muted },
+              step >= 3 && { color: colors.text.heading, fontFamily: typography.family.bold },
+            ]}
+          >
+            Horario
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.stepConnector,
+            { backgroundColor: colors.divider },
+            step >= 4 && { backgroundColor: colors.primary[500] },
+          ]}
+        />
+
+        <View style={styles.stepItem}>
+          <View
+            style={[
+              styles.stepCircle,
+              { backgroundColor: colors.cardAlt, borderColor: colors.border },
+              step >= 4 && { backgroundColor: colors.primary[500], borderColor: colors.primary[500] },
+            ]}
+          >
+            <Text
+              style={[
+                styles.stepNumber,
+                { color: colors.text.muted },
+                step >= 4 && { color: isDark ? colors.primary[950] : colors.primary[50] },
+              ]}
+            >
+              4
+            </Text>
+          </View>
+          <Text
+            style={[
+              styles.stepLabel,
+              { color: colors.text.muted },
+              step >= 4 && { color: colors.text.heading, fontFamily: typography.family.bold },
+            ]}
+          >
+            Confirmar
+          </Text>
         </View>
       </View>
 
@@ -504,41 +632,62 @@ export default function BookingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
+    paddingTop: 14,
+    paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
   },
-  backButton: {
-    padding: 8,
-    borderRadius: 10,
-    backgroundColor: colors.cardAlt,
+  headerIconBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitleBox: {
+    alignItems: 'center',
+  },
+  headerSuper: {
+    fontSize: 9,
+    fontFamily: typography.family.bold,
+    letterSpacing: 1.5,
   },
   headerTitle: {
     fontSize: 16,
     fontFamily: typography.family.bold,
-    color: colors.text.heading,
-    letterSpacing: 1.2,
+    letterSpacing: 0.3,
+  },
+  stepIndicatorBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  stepIndicatorText: {
+    fontSize: 11,
+    fontFamily: typography.family.bold,
+  },
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   stepsBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
-    paddingHorizontal: 24,
-    backgroundColor: colors.surface,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   stepItem: {
     alignItems: 'center',
@@ -587,7 +736,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: 20,
-    paddingBottom: 36,
+    paddingBottom: 110,
   },
   aiAdvisorBanner: {
     flexDirection: 'row',

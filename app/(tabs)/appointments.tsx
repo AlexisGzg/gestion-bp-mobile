@@ -17,10 +17,12 @@ import { AppointmentItem } from '../../src/types';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { useAlert } from '../../src/context/AlertContext';
-import { Calendar, LogOut, Scissors } from 'lucide-react-native';
+import { useTheme } from '../../src/context/ThemeContext';
+import { Calendar, LogOut } from 'lucide-react-native';
 
 export default function AppointmentsScreen() {
   const { showAlert } = useAlert();
+  const { colors } = useTheme();
   const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
@@ -155,34 +157,42 @@ export default function AppointmentsScreen() {
   ].filter((s) => s.data.length > 0);
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Cabecera con Saludo y Salir */}
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Cabecera Refinada */}
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <View style={styles.headerTitleBox}>
-          <Scissors size={20} color={colors.primary[500]} />
+          <View style={[styles.headerIconBadge, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}>
+            <Calendar size={18} color={colors.primary[500]} />
+          </View>
           <View>
-            <Text style={styles.greeting}>Mis Citas & Pases</Text>
-            <Text style={styles.subtitle}>Hola, {userName}</Text>
+            <Text style={[styles.headerSuper, { color: colors.primary[500] }]}>
+              {userName ? `CLIENTE: ${userName.toUpperCase()}` : 'GESTIÓN BARBER PRO'}
+            </Text>
+            <Text style={[styles.greeting, { color: colors.text.heading }]}>Mis Citas & Pases</Text>
           </View>
         </View>
 
-        <TouchableOpacity onPress={handleLogout} activeOpacity={0.8} style={styles.logoutButton}>
-          <LogOut size={18} color={colors.text.secondary} />
+        <TouchableOpacity
+          onPress={handleLogout}
+          activeOpacity={0.8}
+          style={[styles.logoutButton, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
+        >
+          <LogOut size={16} color={colors.status.cancelled} />
         </TouchableOpacity>
       </View>
 
       {/* Lista de Citas */}
       {loading ? (
-        <View style={styles.center}>
+        <View style={[styles.center, { backgroundColor: colors.background }]}>
           <ActivityIndicator size="large" color={colors.primary[500]} />
         </View>
       ) : appointments.length === 0 ? (
-        <View style={styles.center}>
-          <View style={styles.emptyIconBox}>
+        <View style={[styles.center, { backgroundColor: colors.background }]}>
+          <View style={[styles.emptyIconBox, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}>
             <Calendar size={44} color={colors.primary[500]} />
           </View>
-          <Text style={styles.emptyTitle}>No tienes citas registradas</Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptyTitle, { color: colors.text.heading }]}>No tienes citas registradas</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.text.secondary }]}>
             Presiona {'"'}Reservar{'"'} en el menú inferior para agendar tu primera experiencia.
           </Text>
         </View>
@@ -227,38 +237,42 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 14,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
   },
   headerTitleBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
+  headerIconBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerSuper: {
+    fontSize: 9,
+    fontFamily: typography.family.bold,
+    letterSpacing: 1.5,
+  },
   greeting: {
     fontSize: 16,
     fontFamily: typography.family.bold,
-    color: colors.text.heading,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    marginTop: 1,
+    letterSpacing: 0.3,
   },
   logoutButton: {
     padding: 9,
     borderRadius: 12,
-    backgroundColor: colors.cardAlt,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   list: {
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 28,
+    paddingBottom: 110,
   },
   sectionHeader: {
     fontSize: 12,

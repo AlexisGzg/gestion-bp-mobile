@@ -15,14 +15,16 @@ import { LoyaltyProgress } from '../../src/components/molecules/LoyaltyProgress'
 import { AuthService } from '../../src/services/auth.service';
 import { LoyaltyService } from '../../src/services/loyalty.service';
 import { supabase } from '../../src/lib/supabase';
-import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { ClientLoyaltySummary } from '../../src/types';
 import { useAlert } from '../../src/context/AlertContext';
-import { LogOut, User, Crown, ShieldCheck } from 'lucide-react-native';
+import { useTheme } from '../../src/context/ThemeContext';
+import { LogOut, User, Crown, ShieldCheck, Sun, Moon, Smartphone, Palette, Sparkles } from 'lucide-react-native';
 
 export default function ProfileScreen() {
   const { showAlert } = useAlert();
+  const { colors, isDark, themeMode, setThemeMode } = useTheme();
+
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -123,9 +125,9 @@ export default function ProfileScreen() {
   };
 
   const handleChangePassword = async () => {
-    if (newPassword.length < 6) {
+    if (!newPassword || newPassword.length < 6) {
       showAlert({
-        title: 'Contraseña débil',
+        title: 'Contraseña muy corta',
         message: 'La nueva contraseña debe tener al menos 6 caracteres.',
         type: 'warning',
       });
@@ -133,7 +135,7 @@ export default function ProfileScreen() {
     }
     if (newPassword !== confirmPassword) {
       showAlert({
-        title: 'Las contraseñas no coinciden',
+        title: 'Contraseñas no coinciden',
         message: 'Asegúrate de escribir la misma contraseña en ambos campos.',
         type: 'warning',
       });
@@ -183,7 +185,7 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary[500]} />
         </View>
@@ -192,40 +194,186 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Cabecera */}
-      <View style={styles.topBar}>
-        <Text style={styles.topBarTitle}>MI PERFIL & MEMBRESÍA</Text>
-        <TouchableOpacity onPress={handleLogout} activeOpacity={0.8} style={styles.logoutButton}>
-          <LogOut size={18} color={colors.text.secondary} />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* CABECERA SUPERIOR REFINADA */}
+      <View style={[styles.topBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <View style={styles.topBarLeft}>
+          <View style={[styles.topBarIconBox, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}>
+            <User size={18} color={colors.primary[500]} />
+          </View>
+          <View>
+            <Text style={[styles.topBarTag, { color: colors.primary[500] }]}>GESTIÓN BARBER PRO</Text>
+            <Text style={[styles.topBarTitle, { color: colors.text.heading }]}>Mi Perfil & Membresía</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          onPress={handleLogout}
+          activeOpacity={0.8}
+          style={[styles.logoutButton, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
+        >
+          <LogOut size={16} color={colors.status.cancelled} />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* TARJETA DE PERFIL (Diseño idéntico a la derecha de la imagen de referencia) */}
-        <View style={styles.profileHeaderCard}>
-          <View style={styles.avatarRing}>
-            <View style={styles.avatarCircle}>
+        {/* TARJETA DE PERFIL HERITAGE */}
+        <View
+          style={[
+            styles.profileHeaderCard,
+            { backgroundColor: colors.card, borderColor: colors.border, shadowColor: colors.shadow },
+          ]}
+        >
+          <View style={[styles.avatarRing, { borderColor: colors.primary[500] }]}>
+            <View style={[styles.avatarCircle, { backgroundColor: colors.cardAlt }]}>
               <User size={38} color={colors.primary[500]} />
             </View>
           </View>
 
-          <Text style={styles.profileName}>{displayName.toUpperCase()}</Text>
-          <Text style={styles.profileEmail}>{user?.email}</Text>
+          <Text style={[styles.profileName, { color: colors.text.heading }]}>{displayName.toUpperCase()}</Text>
+          <Text style={[styles.profileEmail, { color: colors.text.secondary }]}>{user?.email}</Text>
 
-          {/* Tarjeta de Puntos de Lealtad ("Puntos de lealtad: 1,250 PTS") */}
-          <View style={styles.pointsBadgeCard}>
-            <Crown size={18} color={colors.primary[500]} />
-            <Text style={styles.pointsBadgeLabel}>Puntos de lealtad:</Text>
-            <Text style={styles.pointsBadgeValue}>{loyaltyPoints.toLocaleString()} PTS</Text>
+          {/* Tarjeta de Puntos de Lealtad */}
+          <View style={[styles.pointsBadgeCard, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}>
+            <Crown size={16} color={colors.primary[500]} />
+            <Text style={[styles.pointsBadgeLabel, { color: colors.text.secondary }]}>Puntos de lealtad:</Text>
+            <Text style={[styles.pointsBadgeValue, { color: colors.primary[500] }]}>
+              {loyaltyPoints.toLocaleString()} PTS
+            </Text>
+          </View>
+        </View>
+
+        {/* SECCIÓN NUEVA: APARIENCIA Y TEMA (MODO OSCURO / CLARO / SISTEMA) */}
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border, shadowColor: colors.shadow },
+          ]}
+        >
+          <View style={styles.cardHeader}>
+            <View style={[styles.sectionIconCircle, { backgroundColor: colors.cardAlt }]}>
+              <Palette size={16} color={colors.primary[500]} />
+            </View>
+            <View style={styles.cardHeaderTexts}>
+              <Text style={[styles.cardTitle, { color: colors.text.heading }]}>Apariencia y Tema</Text>
+              <Text style={[styles.cardSubTitle, { color: colors.text.muted }]}>
+                Personaliza los tonos visuales de tu barbería
+              </Text>
+            </View>
+          </View>
+
+          {/* SELECTOR DE TEMAS INTERACTIVO */}
+          <View style={styles.themeSelectorRow}>
+            {/* OPCIÓN CLARO */}
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setThemeMode('light')}
+              style={[
+                styles.themeCard,
+                { backgroundColor: colors.cardAlt, borderColor: colors.border },
+                themeMode === 'light' && [
+                  styles.themeCardActive,
+                  { borderColor: colors.primary[500], backgroundColor: isDark ? colors.surface : '#FFFFFF' },
+                ],
+              ]}
+            >
+              <View style={[styles.themePillIcon, { backgroundColor: '#F3EACE' }]}>
+                <Sun size={18} color="#C18831" />
+              </View>
+              <Text
+                style={[
+                  styles.themeTitle,
+                  { color: colors.text.heading },
+                  themeMode === 'light' && { color: colors.primary[500], fontFamily: typography.family.bold },
+                ]}
+              >
+                Claro
+              </Text>
+              <Text style={[styles.themeDesc, { color: colors.text.muted }]}>Luz clásica</Text>
+            </TouchableOpacity>
+
+            {/* OPCIÓN OSCURO */}
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setThemeMode('dark')}
+              style={[
+                styles.themeCard,
+                { backgroundColor: colors.cardAlt, borderColor: colors.border },
+                themeMode === 'dark' && [
+                  styles.themeCardActive,
+                  { borderColor: colors.primary[500], backgroundColor: isDark ? colors.surface : '#FFFFFF' },
+                ],
+              ]}
+            >
+              <View style={[styles.themePillIcon, { backgroundColor: '#25130C' }]}>
+                <Moon size={18} color="#D19C3E" />
+              </View>
+              <Text
+                style={[
+                  styles.themeTitle,
+                  { color: colors.text.heading },
+                  themeMode === 'dark' && { color: colors.primary[500], fontFamily: typography.family.bold },
+                ]}
+              >
+                Oscuro
+              </Text>
+              <Text style={[styles.themeDesc, { color: colors.text.muted }]}>Espresso élite</Text>
+            </TouchableOpacity>
+
+            {/* OPCIÓN SISTEMA */}
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setThemeMode('system')}
+              style={[
+                styles.themeCard,
+                { backgroundColor: colors.cardAlt, borderColor: colors.border },
+                themeMode === 'system' && [
+                  styles.themeCardActive,
+                  { borderColor: colors.primary[500], backgroundColor: isDark ? colors.surface : '#FFFFFF' },
+                ],
+              ]}
+            >
+              <View style={[styles.themePillIcon, { backgroundColor: isDark ? '#341D13' : '#F3EACE' }]}>
+                <Smartphone size={18} color={colors.primary[500]} />
+              </View>
+              <Text
+                style={[
+                  styles.themeTitle,
+                  { color: colors.text.heading },
+                  themeMode === 'system' && { color: colors.primary[500], fontFamily: typography.family.bold },
+                ]}
+              >
+                Sistema
+              </Text>
+              <Text style={[styles.themeDesc, { color: colors.text.muted }]}>Automático</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={[styles.themeNoticeBox, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}>
+            <Sparkles size={14} color={colors.primary[500]} />
+            <Text style={[styles.themeNoticeText, { color: colors.text.secondary }]}>
+              {isDark
+                ? 'Tema oscuro activo: paleta Espresso de alto contraste.'
+                : 'Tema claro activo: paleta Marfil y Crema Brown Derby.'}
+            </Text>
           </View>
         </View>
 
         {/* Sección Datos Personales */}
-        <View style={styles.card}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border, shadowColor: colors.shadow },
+          ]}
+        >
           <View style={styles.cardHeader}>
-            <ShieldCheck size={18} color={colors.primary[500]} />
-            <Text style={styles.cardTitle}>Datos personales</Text>
+            <View style={[styles.sectionIconCircle, { backgroundColor: colors.cardAlt }]}>
+              <ShieldCheck size={16} color={colors.primary[500]} />
+            </View>
+            <View style={styles.cardHeaderTexts}>
+              <Text style={[styles.cardTitle, { color: colors.text.heading }]}>Datos personales</Text>
+              <Text style={[styles.cardSubTitle, { color: colors.text.muted }]}>Información de contacto en sucursal</Text>
+            </View>
           </View>
 
           <Input
@@ -272,9 +420,9 @@ export default function ProfileScreen() {
           {summary ? (
             <LoyaltyProgress summary={summary} />
           ) : (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Programa de Fidelización</Text>
-              <Text style={styles.loyalSub}>
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.cardTitle, { color: colors.text.heading }]}>Programa de Fidelización</Text>
+              <Text style={[styles.loyalSub, { color: colors.text.muted }]}>
                 Tus visitas se registrarán automáticamente con cada cita completada.
               </Text>
             </View>
@@ -282,27 +430,37 @@ export default function ProfileScreen() {
         </View>
 
         {/* Resumen de Visitas */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Resumen de Visitas</Text>
-          <View style={styles.loyalMetaRow}>
-            <Text style={styles.loyalMetaLabel}>Puntos acumulados</Text>
-            <Text style={styles.loyalMetaValue}>{loyaltyPoints}</Text>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border, shadowColor: colors.shadow },
+          ]}
+        >
+          <Text style={[styles.cardTitle, { color: colors.text.heading, marginBottom: 12 }]}>Resumen de Visitas</Text>
+          <View style={[styles.loyalMetaRow, { borderBottomColor: colors.divider }]}>
+            <Text style={[styles.loyalMetaLabel, { color: colors.text.secondary }]}>Puntos acumulados</Text>
+            <Text style={[styles.loyalMetaValue, { color: colors.primary[500] }]}>{loyaltyPoints}</Text>
           </View>
-          <View style={styles.loyalMetaRow}>
-            <Text style={styles.loyalMetaLabel}>Visitas totales en el local</Text>
-            <Text style={styles.loyalMetaValue}>{client?.total_visits ?? 0}</Text>
+          <View style={[styles.loyalMetaRow, { borderBottomColor: colors.divider }]}>
+            <Text style={[styles.loyalMetaLabel, { color: colors.text.secondary }]}>Visitas totales en el local</Text>
+            <Text style={[styles.loyalMetaValue, { color: colors.primary[500] }]}>{client?.total_visits ?? 0}</Text>
           </View>
           <View style={[styles.loyalMetaRow, styles.loyalMetaRowLast]}>
-            <Text style={styles.loyalMetaLabel}>Última visita registrada</Text>
-            <Text style={styles.loyalMetaValue}>
+            <Text style={[styles.loyalMetaLabel, { color: colors.text.secondary }]}>Última visita registrada</Text>
+            <Text style={[styles.loyalMetaValue, { color: colors.primary[500] }]}>
               {client?.last_visit_at ? client.last_visit_at.slice(0, 10) : '—'}
             </Text>
           </View>
         </View>
 
         {/* Sección Seguridad / Cambiar Contraseña */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Seguridad de la cuenta</Text>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border, shadowColor: colors.shadow },
+          ]}
+        >
+          <Text style={[styles.cardTitle, { color: colors.text.heading, marginBottom: 12 }]}>Seguridad de la cuenta</Text>
           <Input
             label="Nueva contraseña"
             placeholder="Mínimo 6 caracteres"
@@ -333,51 +491,59 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 14,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
+  },
+  topBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  topBarIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  topBarTag: {
+    fontSize: 9,
+    fontFamily: typography.family.bold,
+    letterSpacing: 1.5,
   },
   topBarTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: typography.family.bold,
-    color: colors.text.heading,
-    letterSpacing: 1.2,
+    letterSpacing: 0.3,
   },
   logoutButton: {
-    padding: 8,
+    padding: 9,
     borderRadius: 12,
-    backgroundColor: colors.cardAlt,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   scroll: {
     padding: 20,
-    paddingBottom: 36,
+    paddingBottom: 110,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
   },
   profileHeaderCard: {
-    backgroundColor: colors.card,
     borderRadius: 22,
-    padding: 24,
+    padding: 22,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: colors.border,
     marginBottom: 20,
-    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -388,7 +554,6 @@ const styles = StyleSheet.create({
     height: 86,
     borderRadius: 43,
     borderWidth: 2,
-    borderColor: colors.primary[500],
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -397,19 +562,16 @@ const styles = StyleSheet.create({
     width: 76,
     height: 76,
     borderRadius: 38,
-    backgroundColor: colors.cardAlt,
     justifyContent: 'center',
     alignItems: 'center',
   },
   profileName: {
     fontSize: 20,
     fontFamily: typography.family.bold,
-    color: colors.text.heading,
     letterSpacing: 0.8,
   },
   profileEmail: {
     fontSize: 12,
-    color: colors.text.secondary,
     marginTop: 2,
     marginBottom: 16,
   },
@@ -417,44 +579,105 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.cardAlt,
     borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 16,
   },
   pointsBadgeLabel: {
     fontSize: 12,
-    color: colors.text.secondary,
     fontFamily: typography.family.medium,
   },
   pointsBadgeValue: {
     fontSize: 14,
     fontFamily: typography.family.bold,
-    color: colors.primary[500],
   },
   card: {
-    backgroundColor: colors.card,
-    borderRadius: 18,
+    borderRadius: 20,
     padding: 18,
     borderWidth: 1.5,
-    borderColor: colors.border,
     marginBottom: 18,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
+    gap: 12,
+    marginBottom: 14,
+  },
+  sectionIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardHeaderTexts: {
+    flex: 1,
   },
   cardTitle: {
     fontSize: 15,
     fontFamily: typography.family.bold,
-    color: colors.text.heading,
+  },
+  cardSubTitle: {
+    fontSize: 11,
+    marginTop: 1,
   },
   section: {
     marginBottom: 18,
+  },
+  themeSelectorRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+  },
+  themeCard: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    borderWidth: 1.5,
+  },
+  themeCardActive: {
+    borderWidth: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  themePillIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  themeTitle: {
+    fontSize: 12,
+    fontFamily: typography.family.semiBold,
+  },
+  themeDesc: {
+    fontSize: 9,
+    marginTop: 2,
+  },
+  themeNoticeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+  },
+  themeNoticeText: {
+    fontSize: 11,
+    fontFamily: typography.family.medium,
+    flex: 1,
   },
   loyalMetaRow: {
     flexDirection: 'row',
@@ -462,23 +685,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
   },
   loyalMetaRowLast: {
     borderBottomWidth: 0,
   },
   loyalMetaLabel: {
     fontSize: 13,
-    color: colors.text.secondary,
   },
   loyalMetaValue: {
     fontSize: 13,
     fontFamily: typography.family.bold,
-    color: colors.primary[500],
   },
   loyalSub: {
     fontSize: 12,
-    color: colors.text.muted,
     marginTop: 6,
     lineHeight: 18,
   },
