@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Input } from '../../src/components/atoms/Input';
 import { Button } from '../../src/components/atoms/Button';
 import { AuthService } from '../../src/services/auth.service';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
+import { useAlert } from '../../src/context/AlertContext';
 import { Scissors } from 'lucide-react-native';
 
 const isValidEmail = (value: string) => /\S+@\S+\.\S+/.test(value.trim());
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { showAlert } = useAlert();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,19 +21,31 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
-      Alert.alert('Campos incompletos', 'Ingresa tu correo y contraseña');
+      showAlert({
+        title: 'Campos incompletos',
+        message: 'Ingresa tu correo y contraseña.',
+        type: 'warning',
+      });
       return;
     }
     if (!isValidEmail(email)) {
-      Alert.alert('Correo inválido', 'Ingresa un correo electrónico válido');
+      showAlert({
+        title: 'Correo inválido',
+        message: 'Ingresa un correo electrónico válido.',
+        type: 'warning',
+      });
       return;
     }
 
     try {
       setLoading(true);
       await AuthService.login(email, password);
-    } catch (err: any) {
-      Alert.alert('Error de inicio de sesión', 'Correo o contraseña incorrectos');
+    } catch {
+      showAlert({
+        title: 'Error de inicio de sesión',
+        message: 'Correo o contraseña incorrectos.',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -44,7 +58,11 @@ export default function LoginScreen() {
       if (!session) return;
       router.replace('/(tabs)');
     } catch (err: any) {
-      Alert.alert('Error con Google', err.message || 'No se pudo iniciar sesión con Google');
+      showAlert({
+        title: 'Error con Google',
+        message: err.message || 'No se pudo iniciar sesión con Google.',
+        type: 'error',
+      });
     } finally {
       setGoogleLoading(false);
     }

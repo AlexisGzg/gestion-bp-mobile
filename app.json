@@ -8,10 +8,19 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "La aplicación necesita acceso a tu cámara para capturar la foto de tu rostro y analizar tu tipo de cara.",
+        "NSPhotoLibraryUsageDescription": "La aplicación necesita acceso a tus fotos para analizar la forma de tu rostro y recomendarte cortes personalizados."
+      }
     },
     "android": {
       "package": "com.gestionbp.mobile",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -25,7 +34,14 @@
     },
     "plugins": [
       "expo-font",
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "La aplicación necesita acceso a tus fotos para analizar la forma de tu rostro y recomendarte cortes personalizados.",
+          "cameraPermission": "La aplicación necesita acceso a tu cámara para capturar la foto de tu rostro y analizar tu tipo de cara."
+        }
+      ]
     ],
     "extra": {
       "router": {},

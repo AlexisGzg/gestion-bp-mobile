@@ -10,6 +10,7 @@ import {
 } from '@expo-google-fonts/montserrat';
 import { supabase } from '../src/lib/supabase';
 import { colors } from '../src/theme/colors';
+import { AlertProvider } from '../src/context/AlertContext';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -51,7 +52,7 @@ export default function RootLayout() {
     } else if (session && inAuthGroup && !isResetPassword) {
       router.replace('/(tabs)');
     }
-  }, [session, authChecked, fontsLoaded, segments]);
+  }, [session, authChecked, fontsLoaded, segments, router]);
 
   if (!fontsLoaded || !authChecked) {
     return (
@@ -62,9 +63,18 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-    </Stack>
+    <AlertProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="face-scan"
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+      </Stack>
+    </AlertProvider>
   );
 }

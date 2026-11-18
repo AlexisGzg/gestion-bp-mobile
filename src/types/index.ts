@@ -131,3 +131,59 @@ export interface CartItem {
   product: ProductItem;
   quantity: number;
 }
+
+// ============================================
+// Recomendador Facial y Cortes de Cabello
+// ============================================
+
+export type FaceShape = 'ovalada' | 'redonda' | 'cuadrada' | 'alargada' | 'corazon' | 'diamante';
+
+export interface FaceShapeInfo {
+  id: FaceShape;
+  name: string;
+  description: string;
+  characteristics: string;
+}
+
+export interface HaircutImages {
+  front: string;
+  side: string;
+  back: string;
+}
+
+export interface Haircut {
+  id: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  faceShapes: FaceShape[];
+  howToAsk: string; // Frase exacta para pedirle al barbero
+  maintenanceLevel: 'Bajo' | 'Medio' | 'Alto';
+  recommendedStylingProduct: string;
+  images: HaircutImages;
+}
+
+export interface FaceRatios {
+  faceLength: number;
+  foreheadWidth: number;
+  cheekboneWidth: number;
+  jawWidth: number;
+  lengthToCheekRatio: number;
+  foreheadToJawRatio: number;
+  cheekToJawRatio: number;
+}
+
+export interface FaceDetectionResult {
+  faceShape: FaceShape;
+  confidence: number;
+  detected: boolean;
+  ratios?: FaceRatios;
+  pointsCount?: number;
+  bounds?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  explanation?: string;
+}

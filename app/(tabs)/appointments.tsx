@@ -1,5 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, SectionList, TouchableOpacity, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SectionList,
+  TouchableOpacity,
+  ActivityIndicator,
+  SafeAreaView,
+} from 'react-native';
 import { AppointmentCard } from '../../src/components/molecules/AppointmentCard';
 import { QRModal } from '../../src/components/organisms/QRModal';
 import { AppointmentsService } from '../../src/services/appointments.service';
@@ -8,15 +16,17 @@ import { supabase } from '../../src/lib/supabase';
 import { AppointmentItem } from '../../src/types';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
-import { Calendar, LogOut } from 'lucide-react-native';
+import { useAlert } from '../../src/context/AlertContext';
+import { Calendar, LogOut, Scissors } from 'lucide-react-native';
 
 export default function AppointmentsScreen() {
+  const { showAlert } = useAlert();
   const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
   const [selectedQRAppointment, setSelectedQRAppointment] = useState<AppointmentItem | null>(null);
 
-  const loadAppointments = async () => {
+  const loadAppointments = useCallback(async () => {
     try {
       setLoading(true);
       const user = await AuthService.getCurrentUser();
@@ -27,19 +37,22 @@ export default function AppointmentsScreen() {
         const data = await AppointmentsService.getMyAppointments(user.id);
         setAppointments(data);
       }
-    } catch (err: any) {
-      Alert.alert('Error', 'No se pudieron cargar tus citas');
+    } catch {
+      showAlert({
+        title: 'Error de conexión',
+        message: 'No se pudieron sincronizar tus citas con el servidor.',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [showAlert]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAppointments();
-  }, []);
+  }, [loadAppointments]);
 
-  // Realtime: se actualiza solo cuando cambian citas (y avisa si el staff validó el QR)
   const selectedQRRef = useRef<AppointmentItem | null>(null);
   useEffect(() => {
     selectedQRRef.current = selectedQRAppointment;
@@ -55,17 +68,19 @@ export default function AppointmentsScreen() {
           const updated = payload.new as Partial<AppointmentItem> | null;
           if (!updated) return;
 
-          // Si la cita que está en el modal pasó a in_progress, el escáner ya la validó
           if (
             updated.id &&
             updated.id === selectedQRRef.current?.id &&
             updated.status === 'in_progress'
           ) {
             setSelectedQRAppointment(null);
-            Alert.alert('¡Tu cita ha comenzado!', 'Tu QR fue validado. Pasa a la silla.');
+            showAlert({
+              title: '¡Tu cita ha comenzado!',
+              message: 'Tu pase QR fue validado con éxito. Pasa a la silla de tu barbero.',
+              type: 'success',
+            });
           }
 
-          // Recargar la lista si la cita es de este cliente
           AuthService.getCurrentUser().then((user) => {
             if (user && updated.client_id === user.id) loadAppointments();
           });
@@ -76,42 +91,56 @@ export default function AppointmentsScreen() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [showAlert, loadAppointments]);
 
   const handleCancelAppointment = (appointment: AppointmentItem) => {
-    Alert.alert(
-      'Cancelar Cita',
-      `¿Seguro que deseas cancelar tu cita del ${appointment.date} a las ${appointment.start_time}?`,
-      [
-        { text: 'No', style: 'cancel' },
+    showAlert({
+      title: 'Cancelar Cita',
+      message: `¿Seguro que deseas cancelar tu cita del ${appointment.date} a las ${appointment.start_time} hrs?`,
+      type: 'confirm',
+      buttons: [
+        { text: 'Mantener cita', style: 'cancel' },
         {
           text: 'Sí, Cancelar',
           style: 'destructive',
           onPress: async () => {
             try {
               await AppointmentsService.cancelAppointment(appointment.id);
-              Alert.alert('Cita cancelada', 'Tu cita ha sido cancelada.');
+              showAlert({
+                title: 'Cita cancelada',
+                message: 'Tu cita ha sido cancelada correctamente.',
+                type: 'info',
+              });
               loadAppointments();
-            } catch (err: any) {
-              Alert.alert('Error', 'No se pudo cancelar la cita');
+            } catch {
+              showAlert({
+                title: 'Error al cancelar',
+                message: 'No se pudo cancelar la cita. Inténtalo de nuevo.',
+                type: 'error',
+              });
             }
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   const handleLogout = () => {
-    Alert.alert('Cerrar Sesión', '¿Deseas salir de tu cuenta?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Salir',
-        style: 'destructive',
-        onPress: async () => {
-          await AuthService.logout();
+    showAlert({
+      title: 'Cerrar Sesión',
+      message: '¿Estás seguro de que deseas salir de tu cuenta?',
+      type: 'confirm',
+      buttons: [
+        { text: 'Permanecer', style: 'cancel' },
+        {
+          text: 'Cerrar Sesión',
+          style: 'destructive',
+          onPress: async () => {
+            await AuthService.logout();
+          },
         },
-      },
-    ]);
+      ],
+    });
   };
 
   const upcoming = appointments.filter((a) =>
@@ -121,20 +150,24 @@ export default function AppointmentsScreen() {
     (a) => !['pending', 'confirmed', 'in_progress'].includes(a.status)
   );
   const sections = [
-    { title: 'Próximas', data: upcoming },
-    { title: 'Historial', data: past },
+    { title: 'CITAS ACTIVAS Y PRÓXIMAS', data: upcoming },
+    { title: 'HISTORIAL DE VISITAS', data: past },
   ].filter((s) => s.data.length > 0);
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Cabecera con Saludo y Salir */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hola, {userName}</Text>
-          <Text style={styles.subtitle}>Tus citas y pases QR registrados</Text>
+        <View style={styles.headerTitleBox}>
+          <Scissors size={20} color={colors.primary[500]} />
+          <View>
+            <Text style={styles.greeting}>Mis Citas & Pases</Text>
+            <Text style={styles.subtitle}>Hola, {userName}</Text>
+          </View>
         </View>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <LogOut size={22} color={colors.text.secondary} />
+
+        <TouchableOpacity onPress={handleLogout} activeOpacity={0.8} style={styles.logoutButton}>
+          <LogOut size={18} color={colors.text.secondary} />
         </TouchableOpacity>
       </View>
 
@@ -145,9 +178,13 @@ export default function AppointmentsScreen() {
         </View>
       ) : appointments.length === 0 ? (
         <View style={styles.center}>
-          <Calendar size={48} color={colors.primary[300]} />
+          <View style={styles.emptyIconBox}>
+            <Calendar size={44} color={colors.primary[500]} />
+          </View>
           <Text style={styles.emptyTitle}>No tienes citas registradas</Text>
-          <Text style={styles.emptySubtitle}>Presiona el botón {'"'}+{'"'} para agendar tu primera cita.</Text>
+          <Text style={styles.emptySubtitle}>
+            Presiona {'"'}Reservar{'"'} en el menú inferior para agendar tu primera experiencia.
+          </Text>
         </View>
       ) : (
         <SectionList
@@ -191,32 +228,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 12,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  headerTitleBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   greeting: {
-    ...typography.h2,
+    fontSize: 16,
+    fontFamily: typography.family.bold,
     color: colors.text.heading,
   },
   subtitle: {
-    ...typography.caption,
+    fontSize: 12,
     color: colors.text.secondary,
-    marginTop: 2,
+    marginTop: 1,
   },
   logoutButton: {
-    padding: 8,
-    borderRadius: 10,
-    backgroundColor: colors.card,
+    padding: 9,
+    borderRadius: 12,
+    backgroundColor: colors.cardAlt,
     borderWidth: 1,
     borderColor: colors.border,
   },
   list: {
     paddingHorizontal: 20,
-    paddingBottom: 24,
+    paddingTop: 12,
+    paddingBottom: 28,
   },
   sectionHeader: {
-    ...typography.h3,
-    color: colors.text.heading,
-    marginTop: 8,
+    fontSize: 12,
+    fontFamily: typography.family.bold,
+    color: colors.text.muted,
+    letterSpacing: 1,
+    marginTop: 14,
     marginBottom: 10,
   },
   center: {
@@ -225,15 +274,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 30,
   },
+  emptyIconBox: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.cardAlt,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
   emptyTitle: {
-    ...typography.h3,
+    fontSize: 18,
+    fontFamily: typography.family.bold,
     color: colors.text.heading,
-    marginTop: 14,
+    textAlign: 'center',
   },
   emptySubtitle: {
-    ...typography.caption,
+    fontSize: 12,
     color: colors.text.secondary,
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: 6,
+    lineHeight: 18,
+    maxWidth: 280,
   },
 });

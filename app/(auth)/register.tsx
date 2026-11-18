@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Input } from '../../src/components/atoms/Input';
 import { Button } from '../../src/components/atoms/Button';
 import { AuthService } from '../../src/services/auth.service';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
+import { useAlert } from '../../src/context/AlertContext';
 
 const isValidEmail = (value: string) => /\S+@\S+\.\S+/.test(value.trim());
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { showAlert } = useAlert();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -20,26 +22,52 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!name.trim() || !email.trim() || !password) {
-      Alert.alert('Campos obligatorios', 'Por favor llena todos los campos');
+      showAlert({
+        title: 'Campos obligatorios',
+        message: 'Por favor llena todos los campos marcados.',
+        type: 'warning',
+      });
       return;
     }
     if (!isValidEmail(email)) {
-      Alert.alert('Correo inválido', 'Ingresa un correo electrónico válido');
+      showAlert({
+        title: 'Correo inválido',
+        message: 'Ingresa un correo electrónico válido.',
+        type: 'warning',
+      });
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Contraseña débil', 'La contraseña debe tener al menos 6 caracteres');
+      showAlert({
+        title: 'Contraseña débil',
+        message: 'La contraseña debe tener al menos 6 caracteres.',
+        type: 'warning',
+      });
       return;
     }
 
     try {
       setLoading(true);
       await AuthService.register(name, email, password, phone);
-      Alert.alert('¡Cuenta creada!', 'Tu cuenta ha sido registrada con éxito. Ya puedes iniciar sesión.');
-      router.replace('/(auth)/login');
-    } catch (err: any) {
-      Alert.alert('Error al registrarse', 'No se pudo crear la cuenta. Intenta con otro correo.');
+      showAlert({
+        title: '¡Cuenta creada!',
+        message: 'Tu cuenta ha sido registrada con éxito. Ya puedes iniciar sesión.',
+        type: 'success',
+        buttons: [
+          {
+            text: 'Iniciar Sesión',
+            style: 'default',
+            onPress: () => router.replace('/(auth)/login'),
+          },
+        ],
+      });
+    } catch {
+      showAlert({
+        title: 'Error al registrarse',
+        message: 'No se pudo crear la cuenta. Intenta con otro correo.',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -52,7 +80,11 @@ export default function RegisterScreen() {
       if (!session) return;
       router.replace('/(tabs)');
     } catch (err: any) {
-      Alert.alert('Error con Google', err.message || 'No se pudo iniciar sesión con Google');
+      showAlert({
+        title: 'Error con Google',
+        message: err.message || 'No se pudo iniciar sesión con Google.',
+        type: 'error',
+      });
     } finally {
       setGoogleLoading(false);
     }

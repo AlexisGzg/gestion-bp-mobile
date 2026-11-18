@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -15,17 +14,23 @@ import { Button } from '../../src/components/atoms/Button';
 import { AuthService } from '../../src/services/auth.service';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
+import { useAlert } from '../../src/context/AlertContext';
 import { ArrowLeft, MailCheck } from 'lucide-react-native';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const { showAlert } = useAlert();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
   const handleSubmit = async () => {
     if (!email.trim()) {
-      Alert.alert('Campo incompleto', 'Ingresa tu correo electrónico');
+      showAlert({
+        title: 'Campo incompleto',
+        message: 'Por favor ingresa tu correo electrónico.',
+        type: 'warning',
+      });
       return;
     }
 
@@ -34,7 +39,11 @@ export default function ForgotPasswordScreen() {
       await AuthService.resetPassword(email);
       setSent(true);
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'No se pudo enviar el correo');
+      showAlert({
+        title: 'Error de envío',
+        message: err.message || 'No se pudo enviar el correo de recuperación.',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
     }

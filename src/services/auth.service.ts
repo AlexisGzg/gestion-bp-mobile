@@ -1,6 +1,4 @@
-import { Alert } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
 import { makeRedirectUri } from 'expo-auth-session';
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../types';

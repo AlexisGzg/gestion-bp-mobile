@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -17,10 +16,12 @@ import { AuthService } from '../../src/services/auth.service';
 import { supabase } from '../../src/lib/supabase';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
+import { useAlert } from '../../src/context/AlertContext';
 import { KeyRound } from 'lucide-react-native';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
+  const { showAlert } = useAlert();
   const url = Linking.useLinkingURL();
 
   const [status, setStatus] = useState<'checking' | 'ready' | 'error'>('checking');
@@ -78,6 +79,7 @@ export default function ResetPasswordScreen() {
 
   useEffect(() => {
     if (!url) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError('Abre esta pantalla desde el enlace enviado a tu correo.');
       setStatus('error');
       return;
@@ -87,11 +89,19 @@ export default function ResetPasswordScreen() {
 
   const handleSubmit = async () => {
     if (password.length < 6) {
-      Alert.alert('Contraseña corta', 'Debe tener al menos 6 caracteres');
+      showAlert({
+        title: 'Contraseña corta',
+        message: 'Debe tener al menos 6 caracteres.',
+        type: 'warning',
+      });
       return;
     }
     if (password !== confirm) {
-      Alert.alert('No coinciden', 'Las contraseñas no coinciden');
+      showAlert({
+        title: 'No coinciden',
+        message: 'Las contraseñas no coinciden.',
+        type: 'warning',
+      });
       return;
     }
     try {
@@ -99,11 +109,24 @@ export default function ResetPasswordScreen() {
       await AuthService.changePassword(password);
       setPassword('');
       setConfirm('');
-      Alert.alert('Contraseña actualizada', 'Ya puedes usar tu nueva contraseña.', [
-        { text: 'Continuar', onPress: () => router.replace('/(tabs)') },
-      ]);
+      showAlert({
+        title: 'Contraseña actualizada',
+        message: 'Ya puedes usar tu nueva contraseña.',
+        type: 'success',
+        buttons: [
+          {
+            text: 'Continuar',
+            style: 'default',
+            onPress: () => router.replace('/(tabs)'),
+          },
+        ],
+      });
     } catch (e: any) {
-      Alert.alert('Error', e.message);
+      showAlert({
+        title: 'Error al cambiar contraseña',
+        message: e.message || 'No se pudo actualizar la contraseña.',
+        type: 'error',
+      });
     } finally {
       setSaving(false);
     }
