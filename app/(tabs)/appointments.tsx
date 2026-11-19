@@ -25,20 +25,31 @@ export default function AppointmentsScreen() {
   const { colors } = useTheme();
   const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState('');
   const [selectedQRAppointment, setSelectedQRAppointment] = useState<AppointmentItem | null>(null);
 
-  const loadAppointments = useCallback(async () => {
+  const loadAppointments = useCallback(async (background = false) => {
     try {
-      setLoading(true);
+      if (background) setRefreshing(true);
+      else setLoading(true);
       const user = await AuthService.getCurrentUser();
-      const profile = await AuthService.getCurrentUserProfile(user?.id);
 
-      if (user) {
-        setUserName(profile?.full_name || user.email?.split('@')[0] || 'Cliente');
-        const data = await AppointmentsService.getMyAppointments(user.id);
-        setAppointments(data);
+      if (!user) {
+        setUserId(null);
+        setUserName('');
+        setAppointments([]);
+        return;
       }
+
+      setUserId(user.id);
+      const [profile, data] = await Promise.all([
+        AuthService.getCurrentUserProfile(user.id),
+        AppointmentsService.getMyAppointments(user.id),
+      ]);
+      setUserName(profile?.full_name || user.email?.split('@')[0] || 'Cliente');
+      setAppointments(data);
     } catch {
       showAlert({
         title: 'Error de conexión',
@@ -47,12 +58,13 @@ export default function AppointmentsScreen() {
       });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [showAlert]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadAppointments();
+    void loadAppointments();
   }, [loadAppointments]);
 
   const selectedQRRef = useRef<AppointmentItem | null>(null);
@@ -61,11 +73,18 @@ export default function AppointmentsScreen() {
   }, [selectedQRAppointment]);
 
   useEffect(() => {
+    if (!userId) return;
+
     const channel = supabase
-      .channel('client-dashboard-appointments')
+      .channel(`client-dashboard-appointments-${userId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'appointments' },
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments',
+          filter: `client_id=eq.${userId}`,
+        },
         (payload) => {
           const updated = payload.new as Partial<AppointmentItem> | null;
           if (!updated) return;
@@ -83,19 +102,17 @@ export default function AppointmentsScreen() {
             });
           }
 
-          AuthService.getCurrentUser().then((user) => {
-            if (user && updated.client_id === user.id) loadAppointments();
-          });
+          void loadAppointments(true);
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
-  }, [showAlert, loadAppointments]);
+  }, [showAlert, loadAppointments, userId]);
 
-  const handleCancelAppointment = (appointment: AppointmentItem) => {
+  const handleCancelAppointment = useCallback((appointment: AppointmentItem) => {
     showAlert({
       title: 'Cancelar Cita',
       message: `¿Seguro que deseas cancelar tu cita del ${appointment.date} a las ${appointment.start_time} hrs?`,
@@ -113,7 +130,7 @@ export default function AppointmentsScreen() {
                 message: 'Tu cita ha sido cancelada correctamente.',
                 type: 'info',
               });
-              loadAppointments();
+              void loadAppointments(true);
             } catch {
               showAlert({
                 title: 'Error al cancelar',
@@ -125,9 +142,9 @@ export default function AppointmentsScreen() {
         },
       ],
     });
-  };
+  }, [loadAppointments, showAlert]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     showAlert({
       title: 'Cerrar Sesión',
       message: '¿Estás seguro de que deseas salir de tu cuenta?',
@@ -143,7 +160,11 @@ export default function AppointmentsScreen() {
         },
       ],
     });
-  };
+  }, [showAlert]);
+
+  const handleViewQR = useCallback((appointment: AppointmentItem) => {
+    setSelectedQRAppointment(appointment);
+  }, []);
 
   const upcoming = appointments.filter((a) =>
     ['pending', 'confirmed', 'in_progress'].includes(a.status)
@@ -208,12 +229,12 @@ export default function AppointmentsScreen() {
           renderItem={({ item }) => (
             <AppointmentCard
               appointment={item}
-              onViewQR={(app) => setSelectedQRAppointment(app)}
+              onViewQR={handleViewQR}
               onCancel={handleCancelAppointment}
             />
           )}
-          onRefresh={loadAppointments}
-          refreshing={loading}
+          onRefresh={() => void loadAppointments(true)}
+          refreshing={refreshing}
         />
       )}
 

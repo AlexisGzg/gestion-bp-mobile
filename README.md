@@ -13,11 +13,10 @@
 
 - **Acceso de clientes** con correo y contraseña, registro y autenticación OAuth con Google mediante Supabase.
 - **Tienda** con catálogo de productos activos, categorías y disponibilidad de inventario.
+- **Carrito de compras** con simulación de pasarela de pagos dentro del flujo de compra.
 - **Agendamiento de citas** en tres pasos: servicio, barbero y horario, y confirmación.
 - **Mis citas** con estado, cancelación y visualización del pase QR.
 - **Sesión persistente** mediante AsyncStorage y Supabase Auth.
-
-> La tienda móvil muestra productos; el flujo de compra y pago no está implementado en esta aplicación.
 
 ---
 
@@ -43,7 +42,7 @@ src/
 ├── components/
 │   ├── atoms/               # Botón, input y badge
 │   ├── molecules/           # Tarjetas de producto, servicio y cita
-│   └── organisms/           # Modal QR
+│   └── organisms/           # Modal QR y checkout del carrito
 ├── lib/                     # Cliente Supabase
 ├── services/                # Auth, catálogo y citas
 ├── theme/                   # Colores y tipografía
@@ -139,4 +138,4 @@ npx expo lint
 
 ---
 
-Desarrollado para **GBP — Gestión Barber Pro**.
+Desarrollado para **GBP — Gestión Barber Pro**.

@@ -19,6 +19,7 @@ import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { QRModal } from '../../src/components/organisms/QRModal';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAlert } from '../../src/context/AlertContext';
 import {
   Scissors,
   Calendar,
@@ -33,6 +34,7 @@ import {
 export default function WelcomeDashboardScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { showAlert } = useAlert();
   const [userName, setUserName] = useState('Alejandro');
   const [activeAppointment, setActiveAppointment] = useState<AppointmentItem | null>(null);
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -40,41 +42,51 @@ export default function WelcomeDashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedQRAppointment, setSelectedQRAppointment] = useState<AppointmentItem | null>(null);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async (forceRefresh = false) => {
     try {
       const user = await AuthService.getCurrentUser();
-      const profile = await AuthService.getCurrentUserProfile(user?.id);
-
-      if (user) {
-        const name = profile?.first_name || profile?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'Alejandro';
-        setUserName(name.toUpperCase());
-
-        const [activeApt, servList] = await Promise.all([
-          AppointmentsService.hasActiveAppointment(user.id),
-          CatalogService.getServices(),
-        ]);
-
-        setActiveAppointment(activeApt);
-        setServices(servList.filter((s) => s.is_active));
+      if (!user) {
+        setActiveAppointment(null);
+        setServices([]);
+        return;
       }
+
+      const [profile, activeApt, servList] = await Promise.all([
+        AuthService.getCurrentUserProfile(user.id),
+        AppointmentsService.hasActiveAppointment(user.id),
+        CatalogService.getServices(forceRefresh),
+      ]);
+      const name =
+        profile?.first_name ||
+        profile?.full_name?.split(' ')[0] ||
+        user.email?.split('@')[0] ||
+        'Alejandro';
+
+      setUserName(name.toUpperCase());
+      setActiveAppointment(activeApt);
+      setServices(servList.filter((service) => service.is_active));
     } catch {
-      // Ignorar fallo de red silencioso
+      showAlert({
+        title: 'Error de conexión',
+        message: 'No se pudo actualizar la información del inicio.',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [showAlert]);
 
   useFocusEffect(
     useCallback(() => {
-      loadDashboardData();
-    }, [])
+      void loadDashboardData();
+    }, [loadDashboardData])
   );
 
-  const onRefresh = () => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
-    loadDashboardData();
-  };
+    void loadDashboardData(true);
+  }, [loadDashboardData]);
 
   const getServiceImage = (index: number) => {
     const images = [

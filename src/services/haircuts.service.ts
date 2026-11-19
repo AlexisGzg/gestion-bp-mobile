@@ -18,19 +18,4 @@ export const HaircutsService = {
     // Si no hubiera coincidencia directa, devolver cortes versátiles
     return matches.length === 0 ? HAIRCUTS_CATALOG.slice(0, 3) : matches;
   },
-
-  /**
-   * Obtiene un corte específico por su identificador.
-   */
-  async getHaircutById(id: string): Promise<Haircut | null> {
-    const item = HAIRCUTS_CATALOG.find((h) => h.id === id) || null;
-    return Promise.resolve(item);
-  },
-
-  /**
-   * Obtiene todo el catálogo de cortes disponibles.
-   */
-  async getAllHaircuts(): Promise<Haircut[]> {
-    return Promise.resolve(HAIRCUTS_CATALOG);
-  },
 };

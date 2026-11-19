@@ -11,7 +11,7 @@ interface ServiceCardProps {
   onSelect: (service: ServiceItem) => void;
 }
 
-export const ServiceCard: React.FC<ServiceCardProps> = ({ service, selected = false, onSelect }) => {
+export const ServiceCard = React.memo<ServiceCardProps>(({ service, selected = false, onSelect }) => {
   return (
     <TouchableOpacity
       activeOpacity={0.85}
@@ -37,7 +37,8 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, selected = fa
       <Text style={styles.price}>${service.price}</Text>
     </TouchableOpacity>
   );
-};
+});
+ServiceCard.displayName = 'ServiceCard';
 
 const styles = StyleSheet.create({
   card: {

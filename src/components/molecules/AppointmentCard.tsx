@@ -13,7 +13,7 @@ interface AppointmentCardProps {
   onCancel?: (appointment: AppointmentItem) => void;
 }
 
-export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, onViewQR, onCancel }) => {
+export const AppointmentCard = React.memo<AppointmentCardProps>(({ appointment, onViewQR, onCancel }) => {
   const { colors, isDark } = useTheme();
   const isActive = appointment.status === 'pending' || appointment.status === 'confirmed';
 
@@ -105,7 +105,8 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, o
       )}
     </View>
   );
-};
+});
+AppointmentCard.displayName = 'AppointmentCard';
 
 const styles = StyleSheet.create({
   ticketCard: {

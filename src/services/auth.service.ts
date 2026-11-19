@@ -5,6 +5,10 @@ import { UserProfile } from '../types';
 
 WebBrowser.maybeCompleteAuthSession();
 
+const PROFILE_CACHE_TTL_MS = 30_000;
+const profileCache = new Map<string, { profile: UserProfile | null; expiresAt: number }>();
+const profileRequests = new Map<string, Promise<UserProfile | null>>();
+
 export const AuthService = {
   // Iniciar sesión con email y contraseña
   async login(email: string, password: string) {
@@ -104,13 +108,15 @@ export const AuthService = {
   async logout() {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    profileCache.clear();
+    profileRequests.clear();
   },
 
-  // Obtener usuario autenticado actual desde la sesión
+  // La sesión local basta para identificar al usuario en la interfaz; no requiere una llamada de red.
   async getCurrentUser() {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const { data: { session }, error } = await supabase.auth.getSession();
     if (error) return null;
-    return user;
+    return session?.user ?? null;
   },
 
   // Obtener perfil completo del cliente desde la tabla 'profiles'
@@ -118,14 +124,29 @@ export const AuthService = {
     const id = userId ?? (await this.getCurrentUser())?.id;
     if (!id) return null;
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const cached = profileCache.get(id);
+    if (cached && cached.expiresAt > Date.now()) return cached.profile;
 
-    if (error || !data) return null;
-    return data as UserProfile;
+    const pending = profileRequests.get(id);
+    if (pending) return pending;
+
+    const request = (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', id)
+          .single();
+        const profile = error || !data ? null : (data as UserProfile);
+        profileCache.set(id, { profile, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
+        return profile;
+      } finally {
+        profileRequests.delete(id);
+      }
+    })();
+
+    profileRequests.set(id, request);
+    return request;
   },
 
   // Actualizar datos del perfil
@@ -151,6 +172,10 @@ export const AuthService = {
       .single();
 
     if (error) throw error;
+    profileCache.set(user.id, {
+      profile: data as UserProfile,
+      expiresAt: Date.now() + PROFILE_CACHE_TTL_MS,
+    });
     return data;
   },
 

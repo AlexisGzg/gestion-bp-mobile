@@ -83,6 +83,9 @@ export default function BookingScreen() {
   const [selectedTime, setSelectedTime] = useState<string>('10:00');
   const [notes, setNotes] = useState('');
   const [activeAppointment, setActiveAppointment] = useState<AppointmentItem | null>(null);
+  const handleServiceSelect = useCallback((service: ServiceItem) => {
+    setSelectedService(service);
+  }, []);
 
   useEffect(() => {
     async function init() {
@@ -462,7 +465,7 @@ export default function BookingScreen() {
                 key={srv.id}
                 service={srv}
                 selected={selectedService?.id === srv.id}
-                onSelect={(selected) => setSelectedService(selected)}
+                onSelect={handleServiceSelect}
               />
             ))}
 

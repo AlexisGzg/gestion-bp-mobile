@@ -11,6 +11,8 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        lazy: false,
+        freezeOnBlur: true,
         tabBarActiveTintColor: isDark ? colors.primary[400] : colors.primary[500],
         tabBarInactiveTintColor: colors.text.muted,
         tabBarStyle: {
